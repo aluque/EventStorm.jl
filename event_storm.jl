@@ -355,9 +355,9 @@ end
 
 function flash!(integrator)
     (;conf, ws) = integrator.p
-    (;latt, z, ne1, ngas, rs, Ipeak_median, Ipeak_log_std, u1, ρmin, ρmax, krange) = conf
+    (;latt, z, ne1, ngas, frs, rs, Ipeak_median, Ipeak_log_std, u1, ρmin, ρmax, krange) = conf
     u = integrator.u
-
+    
     # Sample from distributions
     ρ = sqrt((ρmax^2 - ρmin^2) * rand() + ρmin^2)
     Ipeak = exp(log(Ipeak_median) + randn() * Ipeak_log_std)
@@ -369,14 +369,17 @@ function flash!(integrator)
     end
 
     logattenuation!(latt, z, ne1, ngas)
+    @batch for k in axes(u, 2)        
+        u1start = mapspecies(@view(u[:, k]), frs, rs)
 
-    @batch for k in axes(u, 2)
-        u1[:, k] .= @view u[:, k]
+        u1end = flash1!(u1start, k, ρ, Ipeak, conf, ws)
 
-        f = flash1!(k, ρ, Ipeak, conf, ws)
-        u1[electrons, k] *= exp(flash1!(k, ρ, Ipeak, conf, ws))
+        u1[:, k] .= @view(u[:, k])
+
+        mapspecies!(@view(u1[:, k]), u1end, rs, frs)
+        
+        #u1[electrons, k] *= exp(flash1!(k, ρ, Ipeak, conf, ws))
     end
-
     set_u!(integrator, u1)
 end
 
@@ -384,10 +387,10 @@ end
 """
 Discrete change to the electron density due to a flash.
 """
-function flash1!(k, ρ, Ipeak, conf, ws)
+function flash1!(u1start, k, ρ, Ipeak, conf, ws)
     (;z, tl, r1, r2, source_duration, latt, ngas, krange) = conf
 
-    j = krange[k]
+    k1 = krange[k]
     (;props, c) = ws[k]
 
     r = SA[ρ, 0.0, z[k1]]
@@ -396,8 +399,25 @@ function flash1!(k, ρ, Ipeak, conf, ws)
 
     (t1, t2) = tminmax(r, r1, r2)
     t2 += source_duration
+
     
-    dlogne1(r, t1, t2, Ipeak, ngas[k1], latt[k1], conf, ws[k])
+    prob = ODEProblem{false}(fast_derivs, u1start, (t1, t2), (conf, k1, r, Ipeak, ngas[k1], latt[k1], ws[k]))
+
+    integrator = init(prob, Tsit5())
+    solve!(integrator)
+    
+    return integrator.u::typeof(u1start)
+    #dlogne1(r, t1, t2, Ipeak, ngas[k1], latt[k1], conf, ws[k])
+end
+
+function fast_derivs(u, p, t)
+    (conf, k1, r, Ipeak, ngas1, latt1, ws1) = p
+    (;tl, frs) = conf
+    (;props, c) = ws1
+
+    en = norm(electric_field(r, t, Ipeak, tl, latt1, props, c)) / ngas1 / co.Td
+    
+    return derivs(u, frs, en, x=k1)
 end
 
 
@@ -423,7 +443,7 @@ function mapspecies!(n1, n2, rs1, rs2)
     s1 = species(rs1)
     for (i, spec) in enumerate(s1)
         j = idx(rs2, spec)
-        isnothing(j) || n1[i] = n2[j]
+        isnothing(j) || (n1[i] = n2[j])
     end
 end
 
