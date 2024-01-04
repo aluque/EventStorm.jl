@@ -230,7 +230,7 @@ function main(;
         mkdir(outfolder)
         @info "$(outfolder) created"
     else
-        @warn "$(outfolder) already exists and output data may overwrite exisiting files."
+        @warn "$(outfolder) already exists and output may overwrite exisiting files."
     end
 
     sol = solve(prob, Rodas4P(), saveat=300.0, callback=cb)
