@@ -130,68 +130,78 @@ function main(;
     krange = kmin:kmax
     
     latt = zeros(length(z))
+
+    ##
+    ## SLOW, FIELD-INDEPENDENT REACTION SET
+    ##
     
     # From Kotovsky & Moore 2016
     F = 1.74e-18 + 1.93e-17 * sind(35)^4
+    local rs, frs
+    let compN2 = comp["N2"], compO2 = comp["O2"], ngas=ngas, no=no, no3=no3, q=q
+        rs = ReactionSet(
+            ["e + O3 -> O- + O2" => Biblio(1e-17, "ref"),
+             
+             "e + O3 -> O2- + O" => Biblio(1e-15, "ref"),
+             
+             "e + O2 + O2 -> O2- + O2" =>
+             Biblio(1.4e-41 * (300 / Te) * exp(-600 / T) * exp(700 * (Te - T) / Te / T), "ref"),
+             
+             "e + O2 + N2 -> O2- + N2" =>
+             Biblio(1.07e-43 * (300 / Te)^2 * exp(-70 / T) * exp(1500 * (Te - T) / Te / T), "ref"),
+             
+             "O- + O2 -> e + O3" => Biblio(5.0e-21, "ref"),
+             
+             "O- + O -> e + O2" => Biblio(2.3e-16, "ref"),
+             
+             "O2- + O -> e + O3" => Biblio(3.3e-16, "ref"),
+             
+             "O2- + O -> O- + O2" => Biblio(3.310e-16, "ref"),
+             
+             # For recombination we include clusters H+(H2O)_n and NO+ assuming that their sum is
+             # equal to the electron density (neutrality).  Then recombination is the same as electrons
+             # reacting with themselves.
+             "e + e -> e" => Biblio(3e-13 * 300 / Te + 4e-13 * (300 / Te)^1.5, "Gordillo-Vazquez2016/JGR"),
+             
+             # This was for cluster recombination
+             # "e + e -> e" => Biblio(1e-11, "ref"),
+             
+             # Production rate of electrons from cosmic rays. 
+             "O2 -> e" =>  Biblio(F, "ref"),
+             "N2 -> e" =>  Biblio(F, "ref")
+             ];
+            
+            fix = [:N2 => j -> compN2 * ngas[j],
+                   :O2 => j -> compO2 * ngas[j],
+                   :O => j -> no[j],
+                   :O3 => j -> no3[j],
+                   :Q => j -> q[j]])
+    end
     
-    rs = ReactionSet(
-        ["e + O3 -> O- + O2" => Biblio(1e-17, "ref"),
-         
-         "e + O3 -> O2- + O" => Biblio(1e-15, "ref"),
-         
-         "e + O2 + O2 -> O2- + O2" =>
-         Biblio(1.4e-41 * (300 / Te) * exp(-600 / T) * exp(700 * (Te - T) / Te / T), "ref"),
-         
-         "e + O2 + N2 -> O2- + N2" =>
-         Biblio(1.07e-43 * (300 / Te)^2 * exp(-70 / T) * exp(1500 * (Te - T) / Te / T), "ref"),
-         
-         "O- + O2 -> e + O3" => Biblio(5.0e-21, "ref"),
-         
-         "O- + O -> e + O2" => Biblio(2.3e-16, "ref"),
-         
-         "O2- + O -> e + O3" => Biblio(3.3e-16, "ref"),
-         
-         "O2- + O -> O- + O2" => Biblio(3.310e-16, "ref"),
-         
-         # For recombination we include clusters H+(H2O)_n and NO+ assuming that their sum is
-         # equal to the electron density (neutrality).  Then recombination is the same as electrons
-         # reacting with themselves.
-         "e + e -> e" => Biblio(3e-13 * 300 / Te + 4e-13 * (300 / Te)^1.5, "Gordillo-Vazquez2016/JGR"),
-         
-         # This was for cluster recombination
-         # "e + e -> e" => Biblio(1e-11, "ref"),
-         
-         # Production rate of electrons from cosmic rays. 
-         "O2 -> e" =>  Biblio(F, "ref"),
-         "N2 -> e" =>  Biblio(F, "ref")
-         ];
-        
-        fix = [:N2 => j -> comp["N2"] * ngas[j],
-               :O2 => j -> comp["O2"] * ngas[j],
-               :O => j -> no[j],
-               :O3 => j -> no3[j],
-               :Q => j -> q[j]])
-    
+    ##
+    ## FAST, FIELD-DEPENDENT REACTION SET
+    ##
     lx = LxCatSwarmData.load(joinpath(DATA_DIR, "swarm/LxCat_Phelps_20230914.txt"))
     tbl = loadtable(eachcol(lx.data), xcol=:en)
     
-    frs = ReactionSet(["e + N2 -> 2 * e + N2+" => RateLookup(tbl, :C25),
-                       "e + N2 -> 2 * e + N2+" => RateLookup(tbl, :C26),
-                       "e + O2 -> 2 * e + O2+" => RateLookup(tbl, :C43),
-                       "e + O2 -> O + O-" => RateLookup(tbl, :C28),
-                       "e + O2 + M -> O2- + M" => RateLookup(tbl, :C27)
-                       ];
-                      fix = [:N2 => j -> comp["N2"] * ngas[j],
-                             :O2 => j -> comp["O2"] * ngas[j],
-
-                             # The 1e6 comes from Bolsig+'s normalization of 3-body
-                             :M => j -> ngas[j] / 1e6])
-    
+    let compN2 = comp["N2"], compO2 = comp["O2"], ngas=ngas
+        frs = ReactionSet(["e + N2 -> 2 * e + N2+" => RateLookup(tbl, :C25),
+                           "e + N2 -> 2 * e + N2+" => RateLookup(tbl, :C26),
+                           "e + O2 -> 2 * e + O2+" => RateLookup(tbl, :C43),
+                           "e + O2 -> O + O-" => RateLookup(tbl, :C28),
+                           "e + O2 + M -> O2- + M" => RateLookup(tbl, :C27)
+                           ];
+                          fix = [:N2 => j -> compN2 * ngas[j],
+                                 :O2 => j -> compO2 * ngas[j],
+                                 
+                                 # The 1e6 comes from Bolsig+'s normalization of 3-body
+                                 :M => j -> ngas[j] / 1e6])
+    end
+        
     u1 = zeros(nspecies(rs), length(krange))
     
     conf = Config(;z, ngas, krange, ρmin, ρmax, r1, r2, source_duration, Ipeak_median, Ipeak_log_std,
                   tl, storm_rate, keff, ne1, latt, rs, frs, u1)
-    return NamedTuple(Base.@locals)
     
     ws = [Workspace(Float64, length(tl)) for _ in krange]
     
