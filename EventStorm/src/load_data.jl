@@ -132,6 +132,23 @@ end
 load_effective_ionization(;kw...) = load_effective_ionization(Float64; kw...)
 
 
+"""
+Load NRLMSIS profiles.
+"""
+function load_nrlmsis(T::Type, fname::String)
+    df = CSV.read(fname, delim=' ', ignorerepeated=true, DataFrame)
+    
+    z::Vector{T} = df[!, "Heit(km)"] .* co.kilo
+    n_o2::Vector{T} = df[!, "O2den(cm-3)"] .* co.centi^-3    
+
+    o2 = linear_interpolation(z, n_o2)
+
+    return (;o2)
+end
+
+load_nrlmsis(fname::String) = load_nrlmsis(Float64, fname)
+
+
 """    
 Guess a range from a vector `v`.  Raises a warning if the values are too far 
 from uniform.

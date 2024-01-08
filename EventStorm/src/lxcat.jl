@@ -2,7 +2,6 @@ module LxCatSwarmData
 
 using DataFrames
 using CSV
-using Infiltrator
 
 struct LxCatTable
     data::DataFrame

@@ -982,3 +982,303 @@
 # time: 2024-01-01 20:49:30 CET
 # mode: julia
 	@benchmark EventStorm.mapspecs($out.frs, $out.rs, $n0)
+# time: 2024-01-02 13:36:44 CET
+# mode: julia
+	includet("event_storm.jl")
+# time: 2024-01-02 13:48:23 CET
+# mode: julia
+	out = EventStorm.main();
+# time: 2024-01-02 13:49:28 CET
+# mode: julia
+	includet("event_storm.jl")
+# time: 2024-01-02 13:49:45 CET
+# mode: julia
+	out = EventStorm.main();
+# time: 2024-01-02 14:05:18 CET
+# mode: julia
+	includet("event_storm.jl")
+# time: 2024-01-02 14:06:02 CET
+# mode: julia
+	out = EventStorm.main();
+# time: 2024-01-02 14:23:58 CET
+# mode: julia
+	show(err)
+# time: 2024-01-02 14:27:14 CET
+# mode: julia
+	out = EventStorm.main();
+# time: 2024-01-02 14:29:41 CET
+# mode: julia
+	includet("plot_event_storm.jl")
+# time: 2024-01-02 14:30:21 CET
+# mode: julia
+	plt.clf(); PlotEventStorm.pcolor_profiles("/Users/luque/localdata/storm/nag01/", "e", c="k", lw=0.75);
+# time: 2024-01-02 14:30:27 CET
+# mode: julia
+	using PyPlot
+# time: 2024-01-02 14:30:28 CET
+# mode: julia
+	plt.clf(); PlotEventStorm.pcolor_profiles("/Users/luque/localdata/storm/nag01/", "e", c="k", lw=0.75);
+# time: 2024-01-02 14:34:21 CET
+# mode: pkg
+	add ODEInterfaceDiffEq
+# time: 2024-01-02 14:43:14 CET
+# mode: julia
+	out.rs
+# time: 2024-01-02 20:45:25 CET
+# mode: julia
+	out = EventStorm.main();
+# time: 2024-01-03 21:33:08 CET
+# mode: julia
+	using Cthulhu
+# time: 2024-01-03 21:35:54 CET
+# mode: julia
+	includet("plot_event_storm.jl")
+# time: 2024-01-03 21:36:06 CET
+# mode: julia
+	includet("event_storm.jl")
+# time: 2024-01-03 21:36:21 CET
+# mode: julia
+	using Cthulhu
+# time: 2024-01-03 21:36:53 CET
+# mode: julia
+	out = EventStorm.main();
+# time: 2024-01-03 21:37:50 CET
+# mode: julia
+	EventStorm.flash!(out.integrator)
+# time: 2024-01-03 21:43:52 CET
+# mode: julia
+	using Infiltrator
+# time: 2024-01-03 21:44:20 CET
+# mode: julia
+	EventStorm.flash!(out.integrator)
+# time: 2024-01-03 23:26:44 CET
+# mode: julia
+	out = EventStorm.main();
+# time: 2024-01-03 23:27:27 CET
+# mode: julia
+	EventStorm.flash!(out.integrator)
+# time: 2024-01-03 23:27:40 CET
+# mode: julia
+	@descend EventStorm.flash!(out.integrator)
+# time: 2024-01-04 15:17:32 CET
+# mode: help
+	using DifferentialEquations
+# time: 2024-01-04 15:17:36 CET
+# mode: julia
+	using DifferentialEquations
+# time: 2024-01-04 15:17:41 CET
+# mode: help
+	init
+# time: 2024-01-04 15:25:14 CET
+# mode: julia
+	out = EventStorm.main();
+# time: 2024-01-04 15:32:38 CET
+# mode: julia
+	plt.clf(); PlotEventStorm.pcolor_profiles("/Users/luque/localdata/storm/nag01/", "e", c="k", lw=0.75);
+# time: 2024-01-04 15:32:42 CET
+# mode: julia
+	using PyPlot
+# time: 2024-01-04 15:32:43 CET
+# mode: julia
+	plt.clf(); PlotEventStorm.pcolor_profiles("/Users/luque/localdata/storm/nag01/", "e", c="k", lw=0.75);
+# time: 2024-01-04 15:33:38 CET
+# mode: julia
+	out = EventStorm.main(pre_relax=0);
+# time: 2024-01-04 15:34:08 CET
+# mode: julia
+	plt.clf(); PlotEventStorm.pcolor_profiles("/Users/luque/localdata/storm/nag01/", "e", c="k", lw=0.75);
+# time: 2024-01-04 19:37:56 CET
+# mode: julia
+	out = EventStorm.main();
+# time: 2024-01-04 19:38:24 CET
+# mode: julia
+	plt.clf(); PlotEventStorm.pcolor_profiles("/Users/luque/localdata/storm/nag01/", "e", c="k", lw=0.75);
+# time: 2024-01-04 19:38:43 CET
+# mode: julia
+	plt.colorbar()
+# time: 2024-01-04 20:00:23 CET
+# mode: julia
+	nrmsis = EventStorm.load_nrlmsis("data/nlrmsis2.txt"")
+# time: 2024-01-04 20:00:28 CET
+# mode: julia
+	nrmsis = EventStorm.load_nrlmsis("data/nlrmsis2.txt")
+# time: 2024-01-04 20:02:31 CET
+# mode: julia
+	nrmsis = EventStorm.load_pnrlmsis("data/nlrmsis2.txt")
+# time: 2024-01-04 20:03:47 CET
+# mode: julia
+	includet("event_storm.jl")
+# time: 2024-01-04 20:04:05 CET
+# mode: julia
+	nrmsis = EventStorm.load_nrlmsis("data/nlrmsis2.txt")
+# time: 2024-01-04 20:06:43 CET
+# mode: shell
+	cat startup.jl
+# time: 2024-01-04 20:07:03 CET
+# mode: julia
+	includet("event_storm.jl")
+# time: 2024-01-04 20:07:19 CET
+# mode: julia
+	nrmsis = EventStorm.load_nrlmsis("data/nlrmsis2.txt")
+# time: 2024-01-04 20:08:45 CET
+# mode: pkg
+	rm Infiltrator
+# time: 2024-01-04 20:08:58 CET
+# mode: julia
+	includet("event_storm.jl")
+# time: 2024-01-04 20:09:28 CET
+# mode: pkg
+	rm Infiltrator
+# time: 2024-01-04 20:09:32 CET
+# mode: julia
+	includet("event_storm.jl")
+# time: 2024-01-04 20:09:41 CET
+# mode: julia
+	nrmsis = EventStorm.load_nrlmsis("data/nlrmsis2.txt")
+# time: 2024-01-04 20:12:36 CET
+# mode: julia
+	includet("event_storm.jl")
+# time: 2024-01-04 20:13:00 CET
+# mode: julia
+	nrmsis = EventStorm.load_nrlmsis("data/nlrmsis2.txt")
+# time: 2024-01-04 20:15:32 CET
+# mode: julia
+	rlogger = Revise.debug_logger()
+# time: 2024-01-04 20:15:46 CET
+# mode: julia
+	nrmsis = EventStorm.load_nrlmsis("data/nlrmsis2.txt")
+# time: 2024-01-04 20:16:06 CET
+# mode: julia
+	logs = Revise.actions(rlogger)
+# time: 2024-01-04 20:17:42 CET
+# mode: julia
+	Revise.revise()
+# time: 2024-01-04 20:17:46 CET
+# mode: julia
+	nrmsis = EventStorm.load_nrlmsis("data/nlrmsis2.txt")
+# time: 2024-01-04 20:18:26 CET
+# mode: julia
+	includet("event_storm.jl")
+# time: 2024-01-04 20:19:10 CET
+# mode: julia
+	EventStorm.load_nrlmsis("data/nlrmsis2.txt")
+# time: 2024-01-04 20:21:02 CET
+# mode: julia
+	includet("event_storm.jl")
+# time: 2024-01-04 20:21:18 CET
+# mode: julia
+	EventStorm.load_nrlmsis("data/nlrmsis2.txt")
+# time: 2024-01-04 20:23:41 CET
+# mode: julia
+	includet("event_storm.jl")
+# time: 2024-01-04 20:23:59 CET
+# mode: julia
+	EventStorm.main()
+# time: 2024-01-04 20:25:01 CET
+# mode: julia
+	includet("event_storm.jl")
+# time: 2024-01-04 20:26:04 CET
+# mode: julia
+	EventStorm.load_nrlmsis("data/nlrmsis2.txt")
+# time: 2024-01-04 20:27:12 CET
+# mode: julia
+	df = EventStorm.load_nrlmsis("data/nlrmsis2.txt")
+# time: 2024-01-04 20:27:27 CET
+# mode: julia
+	includet("event_storm.jl")
+# time: 2024-01-04 20:27:46 CET
+# mode: julia
+	df = EventStorm.load_nrlmsis("data/nlrmsis2.txt")
+# time: 2024-01-04 20:28:53 CET
+# mode: julia
+	includet("event_storm.jl")
+# time: 2024-01-04 20:29:59 CET
+# mode: julia
+	df = EventStorm.load_nrlmsis("data/nlrmsis2.txt")
+# time: 2024-01-04 20:30:04 CET
+# mode: julia
+	df = EventStorm.pload_nrlmsis("data/nlrmsis2.txt")
+# time: 2024-01-04 20:31:05 CET
+# mode: julia
+	df = EventStorm.testrevise()
+# time: 2024-01-04 20:33:04 CET
+# mode: julia
+	includet("load_data.jl")
+# time: 2024-01-04 20:33:11 CET
+# mode: julia
+	testrevise()
+# time: 2024-01-04 20:33:57 CET
+# mode: pkg
+	st Revise
+# time: 2024-01-04 20:34:47 CET
+# mode: julia
+	includet("event_storm.jl")
+# time: 2024-01-04 20:35:22 CET
+# mode: julia
+	EventStorm.testrevise()
+# time: 2024-01-04 20:39:33 CET
+# mode: shell
+	mv data/nlrmsis2.txt data/nrlmsis2.dat
+# time: 2024-01-04 20:39:45 CET
+# mode: julia
+	includet("load_data.jl")
+# time: 2024-01-04 20:40:00 CET
+# mode: julia
+	load_nrlmsis("data/nrlmsis2.dat"")
+# time: 2024-01-04 20:40:02 CET
+# mode: julia
+	load_nrlmsis("data/nrlmsis2.dat")
+# time: 2024-01-04 20:40:15 CET
+# mode: julia
+	using DataFrames, CSV
+# time: 2024-01-04 20:40:17 CET
+# mode: julia
+	load_nrlmsis("data/nrlmsis2.dat")
+# time: 2024-01-04 20:41:52 CET
+# mode: julia
+	df = load_nrlmsis("data/nrlmsis2.dat")
+# time: 2024-01-04 20:41:58 CET
+# mode: julia
+	names(df)
+# time: 2024-01-04 20:42:28 CET
+# mode: julia
+	df = load_nrlmsis("data/nrlmsis2.dat")
+# time: 2024-01-04 20:42:54 CET
+# mode: help
+	CSV.read
+# time: 2024-01-04 20:43:24 CET
+# mode: julia
+	df = load_nrlmsis("data/nrlmsis2.dat")
+# time: 2024-01-04 20:43:43 CET
+# mode: julia
+	using Constants:co
+# time: 2024-01-04 20:43:45 CET
+# mode: julia
+	df = load_nrlmsis("data/nrlmsis2.dat")
+# time: 2024-01-04 20:43:53 CET
+# mode: julia
+	using Interpolations
+# time: 2024-01-04 20:43:55 CET
+# mode: julia
+	df = load_nrlmsis("data/nrlmsis2.dat")
+# time: 2024-01-04 20:45:01 CET
+# mode: julia
+	includet("load_data.jl")
+# time: 2024-01-04 20:48:44 CET
+# mode: julia
+	includet("event_storm.jl")
+# time: 2024-01-04 20:48:56 CET
+# mode: julia
+	out = EventStorm.main();
+# time: 2024-01-04 20:49:30 CET
+# mode: julia
+	includet("event_storm.jl")
+# time: 2024-01-04 20:51:51 CET
+# mode: julia
+	out = EventStorm.main();
+# time: 2024-01-04 20:52:48 CET
+# mode: julia
+	out.nrlmsis.o2
+# time: 2024-01-08 11:12:38 CET
+# mode: julia
+	out.nrlmsis.o2(100e3)

@@ -1,8 +1,8 @@
 # Handling of electron density profiles.
 
 """
-    An electron density defined in terms of data linearly interpolated in log
-    scale.
+An electron density defined in terms of data linearly interpolated in log
+scale.
 """
 struct LogInterpolatedElectronDensity{I}
     interp::I
@@ -14,17 +14,16 @@ struct LogInterpolatedElectronDensity{I}
 end
 
 """
-    Load data from file `fname` and construct a `LogInterpolatedElectronDensity`.
-    Optionally, `z_scale` is a multiplicative factor for altitudes and
-    `ne_scale` is a multiplicative factor for electron density
-    (the resulting values are assumed to be in SI units).
+Load data from file `fname` and construct a `LogInterpolatedElectronDensity`.
+Optionally, `z_scale` is a multiplicative factor for altitudes and
+`ne_scale` is a multiplicative factor for electron density
+(the resulting values are assumed to be in SI units).
 """
 function LogInterpolatedElectronDensity(T::Type, fname::String; z_scale=co.kilo, ne_scale=co.centi^-3)
     f = CSV.File(fname, header=[:z, :ne])
     z::Vector{T} = f.z
     ne::Vector{T} = f.ne
 
-    @info "Electron density loaded from $fname"
     return LogInterpolatedElectronDensity(z * z_scale, ne * ne_scale)
 end
 
@@ -34,8 +33,8 @@ LogInterpolatedElectronDensity(fname::String; kw...) = LogInterpolatedElectronDe
 (li::LogInterpolatedElectronDensity)(z) = exp(li.interp(z))
 
 """
-    An electron density defined in terms of the Wait-Spies parameterization
-    (with the notation of Shao 2013)
+An electron density defined in terms of the Wait-Spies parameterization
+(with the notation of Shao 2013)
 """
 struct WaitSpiesElectronDensity{T <: Real}
     q::T

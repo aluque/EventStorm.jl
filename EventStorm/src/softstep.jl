@@ -1,4 +1,3 @@
-
 """
     A representation of an axial source with soft-step polynomial functions
 """

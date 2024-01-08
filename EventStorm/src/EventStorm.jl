@@ -6,7 +6,7 @@ discontinuous events.
 ## Running the code
 
 ```julia
-julia> includet("event_storm.jl")     # Needs Revise.jl
+julia> using EventStorm
 julia> EventStorm.main()
 ```
 """
@@ -89,11 +89,11 @@ function main(;
               comp=Dict("N2" => 0.8, "O2" => 0.2),
 
               # Output folder
-              outfolder = expanduser("~/data/storm/nag01"),
+              outfolder = expanduser("~/localdata/storm/nag01"),
               
               # resolution
               points_per_km = 2)
-
+    
     Polyester.reset_threads!()
 
     r1 = @SVector([0, 0, h])
@@ -115,13 +115,16 @@ function main(;
     waccm_profiles = load_waccm(joinpath(DATA_DIR, "waccm_fg_l38.dat"))
     cr_profile = load_cr_profile(joinpath(DATA_DIR, "Thomas1974_Production.dat"))    
     electron_density = LogInterpolatedElectronDensity(joinpath(DATA_DIR, "earth", "electrons.dat"))
+    nrlmsis = load_nrlmsis(joinpath(DATA_DIR, "nrlmsis2.dat"))
+    return NamedTuple(Base.@locals)
+    
     keff = load_effective_ionization(;comp)
     
     ne = electron_density.(z)
     q = cr_profile.(z)
     ngas = interp_gas_profile(waccm_profiles, :nair, z)
-    no3 = interp_gas_profile(gas_profiles, :O3, z)
-    no = interp_gas_profile(waccm_profiles, :O, z)
+    n_o3 = interp_gas_profile(gas_profiles, :O3, z)
+    n_o = interp_gas_profile(waccm_profiles, :O, z)
     
     ne1 = copy(ne)
     
@@ -138,7 +141,7 @@ function main(;
     # From Kotovsky & Moore 2016
     F = 1.74e-18 + 1.93e-17 * sind(35)^4
     local rs, frs
-    let compN2 = comp["N2"], compO2 = comp["O2"], ngas=ngas, no=no, no3=no3, q=q
+    let compN2 = comp["N2"], compO2 = comp["O2"], ngas=ngas, n_o=n_o, n_o3=n_o3, q=q
         rs = ReactionSet(
             ["e + O3 -> O- + O2" => Biblio(1e-17, "ref"),
              
@@ -157,6 +160,9 @@ function main(;
              "O2- + O -> e + O3" => Biblio(3.3e-16, "ref"),
              
              "O2- + O -> O- + O2" => Biblio(3.310e-16, "ref"),
+
+             # Lyman-β
+             "O2 + β -> e + O2+" => 0.90e-18 * co.centi^-2,
              
              # For recombination we include clusters H+(H2O)_n and NO+ assuming that their sum is
              # equal to the electron density (neutrality).  Then recombination is the same as electrons
@@ -171,11 +177,15 @@ function main(;
              "N2 -> e" =>  Biblio(F, "ref")
              ];
             
-            fix = [:N2 => j -> compN2 * ngas[j],
-                   :O2 => j -> compO2 * ngas[j],
-                   :O => j -> no[j],
-                   :O3 => j -> no3[j],
-                   :Q => j -> q[j]])
+            fix = [
+                :N2 => j -> compN2 * ngas[j],
+                :O2 => j -> compO2 * ngas[j],
+                :O => j -> n_o[j],
+                :O3 => j -> n_o3[j],
+                :Q => j -> q[j],
+                :β => 30e6 * co.centi^-2,
+            ]
+        )
     end
     
     ##
@@ -233,6 +243,10 @@ function main(;
         @warn "$(outfolder) already exists and output may overwrite exisiting files."
     end
 
+    # integrator = init(prob, Rodas4P(), save_everystep=false, callback=cb)
+    # flash!(integrator)
+    
+    # return NamedTuple(Base.@locals)
     sol = solve(prob, Rodas4P(), saveat=300.0, callback=cb)
 
     for (i, u) in enumerate(sol.u)
@@ -402,7 +416,8 @@ function flash1!(u1start, k, ρ, Ipeak, conf, ws)
 
     
     prob = ODEProblem{false}(fast_derivs, u1start, (t1, t2), (conf, k1, r, Ipeak, ngas[k1], latt[k1], ws[k]))
-
+    
+    # This is type-unstable; don't know if it can be solved.
     integrator = init(prob, Tsit5())
     solve!(integrator)
     
@@ -416,7 +431,7 @@ function fast_derivs(u, p, t)
     (;props, c) = ws1
 
     en = norm(electric_field(r, t, Ipeak, tl, latt1, props, c)) / ngas1 / co.Td
-    
+                 
     return derivs(u, frs, en, x=k1)
 end
 
