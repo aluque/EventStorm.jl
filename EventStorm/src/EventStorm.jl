@@ -50,16 +50,16 @@ function main(;
               ndipoles=100,
 
               # log-normal distribution for the peak currents [Nag 2016], according to Slyunyaev2018
-              Ipeak_median = 13 * co.kilo,
-              Ipeak_log_std = 0.77,
+              # Ipeak_median = 13 * co.kilo,
+              # Ipeak_log_std = 0.77,
 
               # log-normal distribution for the peak currents [Berger 1975], according to Slyunyaev2018
               # Ipeak_median = 32 * co.kilo,
               # Ipeak_log_std = 0.56,
 
               # log-normal distribution for the peak currents from Ingrid's paper (see fit_ingrid.jl)
-              # Ipeak_median = 20.36 * co.kilo,
-              # Ipeak_log_std = 1.14,
+              Ipeak_median = 20.36 * co.kilo,
+              Ipeak_log_std = 1.14,
               
               # Duration of the storm
               storm_duration = 1 * co.hour,
@@ -116,7 +116,6 @@ function main(;
     cr_profile = load_cr_profile(joinpath(DATA_DIR, "Thomas1974_Production.dat"))    
     electron_density = LogInterpolatedElectronDensity(joinpath(DATA_DIR, "earth", "electrons.dat"))
     nrlmsis = load_nrlmsis(joinpath(DATA_DIR, "nrlmsis2.dat"))
-    return NamedTuple(Base.@locals)
     
     keff = load_effective_ionization(;comp)
     
@@ -125,6 +124,17 @@ function main(;
     ngas = interp_gas_profile(waccm_profiles, :nair, z)
     n_o3 = interp_gas_profile(gas_profiles, :O3, z)
     n_o = interp_gas_profile(waccm_profiles, :O, z)
+    n_no = interp_gas_profile(waccm_profiles, :NO, z)
+
+    # O2 absorption of ionizing Lyman α and β. Flux and cross sections from Kotovsky 2016b
+    R = 1e6 * co.centi^-2
+    # At 1025.7 A
+    lyman_β = @. 30 * R * exp(-nrlmsis.cum_o2(z) * 1.55e-18 * co.centi^2)
+
+    # Kotovsky and Moore give 1.04e-22 cm^2 but that seems to be a typo, as Watanabe (their ref) gives
+    # 1.04e-20 cm^2 citing Preston.
+    # At 1215.6 A
+    lyman_α = @. 5e3 * R * exp(-nrlmsis.cum_o2(z) * 1.04e-20 * co.centi^2)
     
     ne1 = copy(ne)
     
@@ -141,7 +151,11 @@ function main(;
     # From Kotovsky & Moore 2016
     F = 1.74e-18 + 1.93e-17 * sind(35)^4
     local rs, frs
-    let compN2 = comp["N2"], compO2 = comp["O2"], ngas=ngas, n_o=n_o, n_o3=n_o3, q=q
+
+    ion_ion_attachment = 10 * 6e-8 * co.centi^3 * sqrt(300 / T)
+    let compN2 = comp["N2"], compO2 = comp["O2"], ngas=ngas, n_o=n_o, n_o3=n_o3, n_no=n_no, lyman_β=lyman_β,
+        lyman_α=lyman_α, q=q
+        
         rs = ReactionSet(
             ["e + O3 -> O- + O2" => Biblio(1e-17, "ref"),
              
@@ -161,20 +175,44 @@ function main(;
              
              "O2- + O -> O- + O2" => Biblio(3.310e-16, "ref"),
 
-             # Lyman-β
-             "O2 + β -> e + O2+" => 0.90e-18 * co.centi^-2,
+             "O- + O3 -> O3- + O" => 5.30e-16,
+             "O- + O2 + N2 -> O3- + N2" => 1.10e-42 * (300 / T),
+             "O- + O2 + O2 -> O3- + O2" => 1.10e-42 * (300 / T),
+             "O2- + O3 -> O3- + O2" => 4e-17,
              
-             # For recombination we include clusters H+(H2O)_n and NO+ assuming that their sum is
-             # equal to the electron density (neutrality).  Then recombination is the same as electrons
-             # reacting with themselves.
-             "e + e -> e" => Biblio(3e-13 * 300 / Te + 4e-13 * (300 / Te)^1.5, "Gordillo-Vazquez2016/JGR"),
+             # Lyman-β
+             "O2 + β -> e + O2+" => 0.90e-18 * co.centi^2,
+
+             # Lyman-α
+             "NO + α -> e + NO+" => 2.02e-18 * co.centi^2,
+             
+             # Constant rate of e/pos-ion recombination.  Must be improved
+             # "e + N2+ -> " => Biblio(3e-13 * 300 / Te + 4e-13 * (300 / Te)^1.5, "Gordillo-Vazquez2016/JGR"),
+             # "e + O2+ -> " => Biblio(3e-13 * 300 / Te + 4e-13 * (300 / Te)^1.5, "Gordillo-Vazquez2016/JGR"),
+             # "e + NO+ -> " => Biblio(3e-13 * 300 / Te + 4e-13 * (300 / Te)^1.5, "Gordillo-Vazquez2016/JGR"),
+             "e + N2+ -> " => Biblio(4.2e-12, "Gordillo-Vazquez2016/JGR"),
+             "e + O2+ -> " => Biblio(4.2e-12, "Gordillo-Vazquez2016/JGR"),
+             "e + NO+ -> " => Biblio(4.2e-12, "Gordillo-Vazquez2016/JGR"),
              
              # This was for cluster recombination
              # "e + e -> e" => Biblio(1e-11, "ref"),
              
              # Production rate of electrons from cosmic rays. 
-             "O2 -> e" =>  Biblio(F, "ref"),
-             "N2 -> e" =>  Biblio(F, "ref")
+             "O2 -> e + O2+" =>  Biblio(F, "ref"),
+             "N2 -> e + N2+" =>  Biblio(F, "ref"),
+
+             "O- + N2+ ->" => ion_ion_attachment,
+             "O- + O2+ ->" => ion_ion_attachment,
+             "O- + NO+ ->" => ion_ion_attachment,
+             "O2- + N2+ ->" => ion_ion_attachment,
+             "O2- + O2+ ->" => ion_ion_attachment,
+             "O2- + NO+ ->" => ion_ion_attachment,
+             "O3- + N2+ ->" => ion_ion_attachment,
+             "O3- + O2+ ->" => ion_ion_attachment,
+             "O3- + NO+ ->" => ion_ion_attachment,
+            
+             # Phony reaction to keep track of second positive emissions
+             "SPS -> SPS" => 1.0
              ];
             
             fix = [
@@ -182,8 +220,10 @@ function main(;
                 :O2 => j -> compO2 * ngas[j],
                 :O => j -> n_o[j],
                 :O3 => j -> n_o3[j],
+                :NO => j -> n_no[j],
                 :Q => j -> q[j],
-                :β => 30e6 * co.centi^-2,
+                :β => j -> lyman_β[j],
+                :α => j -> lyman_α[j],
             ]
         )
     end
@@ -199,7 +239,9 @@ function main(;
                            "e + N2 -> 2 * e + N2+" => RateLookup(tbl, :C26),
                            "e + O2 -> 2 * e + O2+" => RateLookup(tbl, :C43),
                            "e + O2 -> O + O-" => RateLookup(tbl, :C28),
-                           "e + O2 + M -> O2- + M" => RateLookup(tbl, :C27)
+                           "e + O2 + M -> O2- + M" => RateLookup(tbl, :C27),
+                           # Instantaneous emission
+                           "e + N2 -> e + SPS" => RateLookup(tbl, :C10)
                            ];
                           fix = [:N2 => j -> compN2 * ngas[j],
                                  :O2 => j -> compO2 * ngas[j],
