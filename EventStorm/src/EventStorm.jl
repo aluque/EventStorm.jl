@@ -28,7 +28,7 @@ using DipoleRadiators
 using DipoleRadiators: FieldComponents, Propagator, image, pos, remotefield
 using Chemise
 
-const DATA_DIR = joinpath(@__DIR__, "data")
+const DATA_DIR = joinpath(@__DIR__, "..", "data")
 
 include("softstep.jl")
 include("electrons.jl")
