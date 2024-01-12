@@ -2,7 +2,7 @@
 
 julia_version = "1.10.0"
 manifest_format = "2.0"
-project_hash = "7cd3bf330eedf4c7f925ba6ee5e27a86b8436f9a"
+project_hash = "95b37492028f453d412359c102a323bfe28dd61d"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "41c37aa88889c171f1300ceac1313c06e891d245"
@@ -154,6 +154,18 @@ git-tree-sha1 = "cd67fc487743b2f0fd4380d4cbd3a24660d0eec8"
 uuid = "944b1d66-785c-5afd-91f1-9de20f533193"
 version = "0.7.3"
 
+[[deps.ColorTypes]]
+deps = ["FixedPointNumbers", "Random"]
+git-tree-sha1 = "eb7f0f8307f71fac7c606984ea5fb2817275d6e4"
+uuid = "3da002f7-5984-5a60-b8a6-cbb66c0b333f"
+version = "0.11.4"
+
+[[deps.Colors]]
+deps = ["ColorTypes", "FixedPointNumbers", "Reexport"]
+git-tree-sha1 = "fc08e5930ee9a4e03f84bfb5211cb54e7769758a"
+uuid = "5ae59095-9a9b-59fe-a467-6f913c188581"
+version = "0.12.10"
+
 [[deps.CommonSolve]]
 git-tree-sha1 = "0eee5eb66b1cf62cd6ad1b460238e60e4b09400c"
 uuid = "38540f10-b2f7-11e9-35d8-d573e4eb0ff2"
@@ -184,6 +196,12 @@ version = "1.0.5+1"
 git-tree-sha1 = "f749037478283d372048690eb3b5f92a79432b34"
 uuid = "2569d6c7-a4a2-43d3-a901-331e8e4be471"
 version = "0.2.3"
+
+[[deps.Conda]]
+deps = ["Downloads", "JSON", "VersionParsing"]
+git-tree-sha1 = "51cab8e982c5b598eea9c8ceaced4b58d9dd37c9"
+uuid = "8f4d0f93-b110-5947-807f-2305c1781a2d"
+version = "1.10.0"
 
 [[deps.Constants]]
 path = "/Users/luque/projects/julia/Constants"
@@ -465,6 +483,12 @@ version = "2.22.0"
     BlockBandedMatrices = "ffab5731-97b5-5995-9138-79e8c1846df0"
     StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
+[[deps.FixedPointNumbers]]
+deps = ["Statistics"]
+git-tree-sha1 = "335bfdceacc84c5cdf16aadc768aa5ddfc5383cc"
+uuid = "53c48c17-4a7d-5ca2-90c5-79b7896eea93"
+version = "0.8.4"
+
 [[deps.ForwardDiff]]
 deps = ["CommonSubexpressions", "DiffResults", "DiffRules", "LinearAlgebra", "LogExpFunctions", "NaNMath", "Preferences", "Printf", "Random", "SpecialFunctions"]
 git-tree-sha1 = "cf0fe81336da9fb90944683b8c41984b08793dad"
@@ -584,6 +608,12 @@ deps = ["Artifacts", "Preferences"]
 git-tree-sha1 = "7e5d6779a1e09a36db2a7b6cff50942a0a7d0fca"
 uuid = "692b3bcd-3c85-4b1f-b108-f13ce0eb3210"
 version = "1.5.0"
+
+[[deps.JSON]]
+deps = ["Dates", "Mmap", "Parsers", "Unicode"]
+git-tree-sha1 = "31e996f0a15c7b280ba9f76636b3ff9e2ae58c9a"
+uuid = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
+version = "0.21.4"
 
 [[deps.JumpProcesses]]
 deps = ["ArrayInterface", "DataStructures", "DiffEqBase", "DocStringExtensions", "FunctionWrappers", "Graphs", "LinearAlgebra", "Markdown", "PoissonRandom", "Random", "RandomNumbers", "RecursiveArrayTools", "Reexport", "SciMLBase", "StaticArrays", "UnPack"]
@@ -989,6 +1019,18 @@ version = "2.3.1"
 deps = ["Unicode"]
 uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 
+[[deps.PyCall]]
+deps = ["Conda", "Dates", "Libdl", "LinearAlgebra", "MacroTools", "Serialization", "VersionParsing"]
+git-tree-sha1 = "9816a3826b0ebf49ab4926e2b18842ad8b5c8f04"
+uuid = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0"
+version = "1.96.4"
+
+[[deps.PyPlot]]
+deps = ["Colors", "LaTeXStrings", "PyCall", "Sockets", "Test", "VersionParsing"]
+git-tree-sha1 = "9220a9dae0369f431168d60adab635f88aca7857"
+uuid = "d330b81b-6aea-500a-939a-2ce795aea3ee"
+version = "2.11.2"
+
 [[deps.QuadGK]]
 deps = ["DataStructures", "LinearAlgebra"]
 git-tree-sha1 = "9ebcd48c498668c7fa0e97a9cae873fbee7bfee1"
@@ -1020,12 +1062,10 @@ deps = ["Requires"]
 git-tree-sha1 = "1342a47bf3260ee108163042310d26f2be5ec90b"
 uuid = "c84ed2f1-dad5-54f0-aa8e-dbefe2724439"
 version = "0.4.5"
+weakdeps = ["FixedPointNumbers"]
 
     [deps.Ratios.extensions]
     RatiosFixedPointNumbersExt = "FixedPointNumbers"
-
-    [deps.Ratios.weakdeps]
-    FixedPointNumbers = "53c48c17-4a7d-5ca2-90c5-79b7896eea93"
 
 [[deps.RecipesBase]]
 deps = ["PrecompileTools"]
@@ -1415,6 +1455,11 @@ deps = ["ArrayInterface", "CPUSummary", "HostCPUFeatures", "IfElse", "LayoutPoin
 git-tree-sha1 = "7209df901e6ed7489fe9b7aa3e46fb788e15db85"
 uuid = "3d5dd08c-fd9d-11e8-17fa-ed2836048c2f"
 version = "0.21.65"
+
+[[deps.VersionParsing]]
+git-tree-sha1 = "58d6e80b4ee071f5efd07fda82cb9fbe17200868"
+uuid = "81def892-9a0e-5fdd-b105-ffc91e053289"
+version = "1.3.0"
 
 [[deps.VertexSafeGraphs]]
 deps = ["Graphs"]
