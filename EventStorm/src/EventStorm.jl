@@ -661,8 +661,8 @@ end
 
 
 """ 
-Compute the max and min time retardations at `rf` caused by a source at `r1`-`r2`.  If mirror is
-true computes the delays of the mirror images.
+Compute the max and min time retardations at `rf` caused by a source at `r1`-`r2`.  Considers 
+the delays of the mirror images.
 """
 function tminmax(rf, r1, r2)
     r1m = @SVector [r1[1], r1[2], -r1[3]]
