@@ -482,7 +482,7 @@ end
 Map the densities `n2` of a `ReactionSet` `rs2` into a `SVector` for the `ReactionSet` `rs1`.
 Species not in `rs2` are left as `default`.
 """
-function mapspecies(n2, rs1, rs2; default=0)
+function mapspecies(n2, rs1, rs2; default=zero(eltype(n2)))
     s1 = species(rs1)
     tpl = map(s1) do spec
         i = idx(rs2, spec)
