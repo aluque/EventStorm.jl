@@ -270,6 +270,7 @@ function main(;
     # Events per unit time
     ν = storm_rate * π * (ρmax^2 - ρmin^2)
     nevents = convert(Int, rand(Poisson(ν * storm_duration)))
+    @info "Number of flashes to simulate:" nevents
     event_times = pre_relax .+ storm_duration .* rand(nevents)
     sort!(event_times)
     
@@ -477,8 +478,15 @@ function fast_derivs(u, p, t)
     (;props, c) = ws1
 
     en = norm(electric_field(r, t, Ipeak, tl, latt1, props, c)) / ngas1 / co.Td
-                 
-    return derivs(u, frs, en, x=k1)
+
+    local dudt
+    try
+        dudt = derivs(u, frs, en, x=k1)
+    catch e
+        @error "error computing derivatives (field too high?)"
+        @show en u
+    end
+    return dudt
 end
 
 
