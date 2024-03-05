@@ -462,10 +462,11 @@ function flash1!(u1start, k, ρ, Ipeak, conf, ws)
     t2 += source_duration
 
     
-    prob = ODEProblem{false}(fast_derivs, u1start, (t1, t2), (conf, k1, r, Ipeak, ngas[k1], latt[k1], ws[k]))
+    prob = ODEProblem{false}(fast_derivs, u1start, (t1, t2),
+                             (conf, k1, r, Ipeak, ngas[k1], latt[k1], ws[k]))
     
     # This is type-unstable; don't know if it can be solved.
-    integrator = init(prob, Tsit5())
+    integrator = init(prob, Tsit5(), reltol=1e-6)
     solve!(integrator)
     
     return integrator.u::typeof(u1start)
