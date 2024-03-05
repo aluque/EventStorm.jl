@@ -59,7 +59,7 @@ function main(;
               # Ipeak_log_std = 0.56,
 
               # log-normal distribution for the peak currents from Ingrid's paper (see fit_ingrid.jl)
-              Ipeak_median = 20.36 * co.kilo,
+              Ipeak_median = 10 * 20.36 * co.kilo,
               Ipeak_log_std = 1.14,
               
               # Duration of the storm
