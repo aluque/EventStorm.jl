@@ -90,6 +90,8 @@ function main(;
 
               # Output folder
               outfolder = expanduser("~/localdata/storm/nag01"),
+              # Time between outputs
+              output_dt = 300,
               
               # resolution
               points_per_km = 2)
@@ -289,7 +291,7 @@ function main(;
     # flash!(integrator)
     
     # return NamedTuple(Base.@locals)
-    sol = solve(prob, Rodas4P(), saveat=300.0, callback=cb)
+    sol = solve(prob, Rodas4P(), saveat=output_dt, callback=cb)
 
     for (i, u) in enumerate(sol.u)
         fname = joinpath(outfolder, @sprintf("n-%04d.csv", i))
