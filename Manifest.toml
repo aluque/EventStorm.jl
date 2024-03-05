@@ -2,7 +2,7 @@
 
 julia_version = "1.10.0"
 manifest_format = "2.0"
-project_hash = "e8f97ac279cf47cc2124e90704e017f1232067f9"
+project_hash = "374967dcc8352a96c99307354092c7a27ad03a1a"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "332e5d7baeff8497b923b730b994fa480601efc7"
@@ -456,6 +456,12 @@ deps = ["Adapt"]
 git-tree-sha1 = "2efe862de93cd87f620ad6ac9c9e3f83f1b2841b"
 uuid = "f151be2c-9106-41f4-ab19-57ee4f262869"
 version = "0.6.4"
+
+[[deps.EventStorm]]
+deps = ["CSV", "Chemise", "Constants", "DataFrames", "Dates", "DiffEqCallbacks", "DifferentialEquations", "DipoleRadiators", "Distributions", "Interpolations", "LinearAlgebra", "Polyester", "Printf", "PyPlot", "StaticArrays"]
+path = "EventStorm"
+uuid = "e1916a7b-5356-4ae9-b9de-32b77d3c8d94"
+version = "0.1.0"
 
 [[deps.ExponentialUtilities]]
 deps = ["Adapt", "ArrayInterface", "GPUArraysCore", "GenericSchur", "LinearAlgebra", "PrecompileTools", "Printf", "SparseArrays", "libblastrampoline_jll"]
