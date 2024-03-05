@@ -32,7 +32,7 @@ function plot_profiles(folder, s=:e; kw...)
 end
 
 
-function pcolor_profiles(folder, s=:e; log=true, kw...)
+function pcolor_profiles(folder, s=:e; log=true, cmap="gnuplot2", kw...)
     times = CSV.read(joinpath(folder, "times.csv"), DataFrame)
     z = nothing
     list = map(eachindex(times.t)) do i
@@ -45,7 +45,7 @@ function pcolor_profiles(folder, s=:e; log=true, kw...)
     if log
         kw = (;norm=plt.matplotlib.colors.LogNorm(), kw...)
     end
-    plt.pcolormesh(times.t, z, v; kw...)
+    plt.pcolormesh(times.t, z, v; cmap, kw...)
 end
 
 function plot_slice(folder, zslice, s=:e; kw...)
