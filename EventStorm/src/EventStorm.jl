@@ -22,6 +22,7 @@ using DifferentialEquations
 using DiffEqCallbacks
 using Printf
 using Distributions
+using Dates
 
 using Constants: co
 using DipoleRadiators
@@ -89,7 +90,8 @@ function main(;
               comp=Dict("N2" => 0.8, "O2" => 0.2),
 
               # Output folder
-              outfolder = expanduser("~/localdata/storm/nag01"),
+              outfolder = expanduser("~/data/storm/" * String(rand('A':'Z', 3)) * "-" * Dates.format(now(), "yyyymmdd-HHMMss")),
+              
               # Time between outputs
               output_dt = 300,
               
