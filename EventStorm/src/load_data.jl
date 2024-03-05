@@ -51,7 +51,7 @@ end
 
 function load_waccm(fname)
     fields = "z p T nair O O3 N NO NO2 NO3 N2O N2O5 H OH H2 HO2 H2O2 HNO3 CO"
-    f = CSV.read("data/waccm_fg_l38.dat", DataFrame;
+    f = CSV.read(fname, DataFrame;
                  delim=" ", ignorerepeated=true,
                  skipto=10,
                  header=String.(split(fields)))
