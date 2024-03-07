@@ -20,9 +20,18 @@ using LinearAlgebra
 using Polyester
 using DifferentialEquations
 using DiffEqCallbacks
+using RecursiveArrayTools
 using Printf
 using Distributions
 using Dates
+
+using DocStringExtensions
+
+@template DEFAULT =
+    """
+    $(SIGNATURES)
+    $(DOCSTRING)
+    """
 
 using Constants: co
 using DipoleRadiators
@@ -35,6 +44,7 @@ include("softstep.jl")
 include("electrons.jl")
 include("load_data.jl")
 include("lxcat.jl")
+include("singleflash.jl")
 
 function main(;
               T = 200,
@@ -59,7 +69,7 @@ function main(;
               # Ipeak_log_std = 0.56,
 
               # log-normal distribution for the peak currents from Ingrid's paper (see fit_ingrid.jl)
-              Ipeak_median = 10 * 20.36 * co.kilo,
+              Ipeak_median = 20.36 * co.kilo,
               Ipeak_log_std = 1.14,
               
               # Duration of the storm
@@ -96,7 +106,14 @@ function main(;
               output_dt = 300,
               
               # resolution
-              points_per_km = 2)
+              points_per_km = 2,
+
+              # If not nothing, use a different gas density file
+              gas_density_fname = nothing,
+              
+              # If false, returns the configuration but does not run the simulation
+              run = true,
+              )
     
     Polyester.reset_threads!()
 
@@ -121,11 +138,15 @@ function main(;
     electron_density = LogInterpolatedElectronDensity(joinpath(DATA_DIR, "earth", "electrons.dat"))
     nrlmsis = load_nrlmsis(joinpath(DATA_DIR, "nrlmsis2.dat"))
     
-    keff = load_effective_ionization(;comp)
-    
     ne = electron_density.(z)
     q = cr_profile.(z)
-    ngas = interp_gas_profile(waccm_profiles, :nair, z)
+    if isnothing(gas_density_fname)
+        ngas = interp_gas_profile(waccm_profiles, :nair, z)
+    else
+        f_ngas = load_gas_density(gas_density_fname)
+        ngas = f_ngas.(z)
+    end
+
     n_o3 = interp_gas_profile(gas_profiles, :O3, z)
     n_o = interp_gas_profile(waccm_profiles, :O, z)
     n_no = interp_gas_profile(waccm_profiles, :NO, z)
@@ -140,14 +161,10 @@ function main(;
     # At 1215.6 A
     lyman_α = @. 5e3 * R * exp(-nrlmsis.cum_o2(z) * 1.04e-20 * co.centi^2)
     
-    ne1 = copy(ne)
-    
     kmin = searchsortedfirst(z, hmin)
     kmax = searchsortedlast(z, hmax)
     krange = kmin:kmax
     
-    latt = zeros(length(z))
-
     ##
     ## SLOW, FIELD-INDEPENDENT REACTION SET
     ##
@@ -254,17 +271,17 @@ function main(;
                                  :M => j -> ngas[j] / 1e6])
     end
         
-    u1 = zeros(nspecies(rs), length(krange))
+    n1 = zeros(nspecies(frs), length(krange))
     
     conf = Config(;z, ngas, krange, ρmin, ρmax, r1, r2, source_duration, Ipeak_median, Ipeak_log_std,
-                  tl, storm_rate, keff, ne1, latt, rs, frs, u1)
+                  tl, storm_rate, n1, rs, frs)
     
     ws = [Workspace(Float64, length(tl)) for _ in krange]
     
-    u0 = zeros(nspecies(rs), length(krange))
-    for i in axes(u0, 2)
-        j = krange[i]
-        u0[:, i] = Chemise.init(rs, Dict(:e => ne[j], :O3 => 1e9), 0.0)
+    n0 = zeros(nspecies(rs), length(krange))
+    for k in axes(n0, 2)
+        k1 = krange[k]
+        n0[:, k] = Chemise.init(rs, Dict(:e => ne[k1], :O3 => 1e9), 0.0)
     end
 
     # Events per unit time
@@ -277,8 +294,12 @@ function main(;
     cb = DiffEqCallbacks.PresetTimeCallback(event_times, flash!, save_positions=(false, false))
     
     tspan = (0.0, pre_relax + storm_duration + post_relax)
-    prob = ODEProblem(derivs!, u0, tspan, (;conf, ws))
-    
+    prob = ODEProblem(derivs!, n0, tspan, (;conf, ws))
+
+    if !run
+        return NamedTuple(Base.@locals)
+    end
+
     #integrator = init(prob, Rodas4P())
     i = 0
     times = Float64[]
@@ -296,18 +317,18 @@ function main(;
     # return NamedTuple(Base.@locals)
     sol = solve(prob, Rodas4P(), saveat=output_dt, callback=cb)
 
-    for (i, u) in enumerate(sol.u)
+    for (i, n) in enumerate(sol.u)
         fname = joinpath(outfolder, @sprintf("n-%04d.csv", i))
         
         CSV.write(fname, DataFrame(Dict(:z => z[krange],
-                                        map(s -> s => u[idx(rs, s), :], species(rs))...)))
+                                        map(s -> s => n[idx(rs, s), :], species(rs))...)))
     end
     CSV.write(joinpath(outfolder, "times.csv"), DataFrame(t=sol.t))
         
     return NamedTuple(Base.@locals)
 end
 
-@kwdef mutable struct Config{Z<:AbstractVector, T, Dip, Kinterp, RS, FRS}
+@kwdef mutable struct Config{Z<:AbstractVector, T, Dip, RS, FRS}
     "Altitudes (m)"
     z::Z
     
@@ -344,18 +365,9 @@ end
     "Number of flashes per unit time and area"
     storm_rate::T
     
-    "Interpolation function for the effective ionization rate coefficient"
-    keff::Kinterp
-
-    "Space to store a temporary electron density"
-    ne1::Vector{T}
-
-    "Space for updating u"
-    u1::Array{T, 2}
+    "Space for densities in the fast reaction set"
+    n1::Array{T, 2}
     
-    "Space to store the log-attenuation."
-    latt::Vector{T}
-
     "Reaction set"
     rs::RS
 
@@ -384,111 +396,16 @@ struct Workspace{T, Prop}
 
 end
 
-function derivs!(du, u, p, t)
+function derivs!(dn, n, p, t)
     (;conf, ws) = p
     (;rs, krange) = conf
     
-    for i in axes(u, 2)
+    @batch for i in axes(n, 2)
         j = krange[i]
-        du[:, i] = derivs(@view(u[:, i]), rs; x=j)
+        dn[:, i] = derivs(@view(n[:, i]), rs; x=j)
     end
 end
 
-
-"""
-Sample the next event.
-"""
-function sample_next(conf)
-    (;storm_rate, ρmin, ρmax) = conf
-
-    # Events per unit time
-    ν = storm_rate * π * (ρmax^2 - ρmin^2)
-
-    # Next time
-    tnext = -log(rand()) / ν
-
-    # Radius
-    ρ = sqrt((ρmax^2 - ρmin^2) * rand() + ρmin^2)
-
-    return (tnext, ρ)
-end
-
-
-function flash!(integrator)
-    (;conf, ws) = integrator.p
-    (;latt, z, ne1, ngas, frs, rs, Ipeak_median, Ipeak_log_std, u1, ρmin, ρmax, krange) = conf
-    u = integrator.u
-    
-    # Sample from distributions
-    ρ = sqrt((ρmax^2 - ρmin^2) * rand() + ρmin^2)
-    Ipeak = exp(log(Ipeak_median) + randn() * Ipeak_log_std)
-    
-    electrons = idx(rs, :e)
-    for k in axes(u, 2)
-        k1 = krange[k]
-        ne1[k1] = u[electrons, k]
-    end
-
-    logattenuation!(latt, z, ne1, ngas)
-    @batch for k in axes(u, 2)        
-        u1start = mapspecies(@view(u[:, k]), frs, rs)
-
-        u1end = flash1!(u1start, k, ρ, Ipeak, conf, ws)
-
-        u1[:, k] .= @view(u[:, k])
-
-        mapspecies!(@view(u1[:, k]), u1end, rs, frs)
-        
-        #u1[electrons, k] *= exp(flash1!(k, ρ, Ipeak, conf, ws))
-    end
-    set_u!(integrator, u1)
-end
-
-
-"""
-Discrete change to the electron density due to a flash.
-"""
-function flash1!(u1start, k, ρ, Ipeak, conf, ws)
-    (;z, tl, r1, r2, source_duration, latt, ngas, krange) = conf
-
-    k1 = krange[k]
-    (;props, c) = ws[k]
-
-    r = SA[ρ, 0.0, z[k1]]
-    propagators!(props, tl, r)
-    attenuation!(c, latt[k1], tl, r)
-
-    (t1, t2) = tminmax(r, r1, r2)
-    t2 += source_duration
-
-    
-    prob = ODEProblem{false}(fast_derivs, u1start, (t1, t2),
-                             (conf, k1, r, Ipeak, ngas[k1], latt[k1], ws[k]))
-    
-    # This is type-unstable; don't know if it can be solved.
-    integrator = init(prob, Tsit5(), reltol=1e-6)
-    solve!(integrator)
-    
-    return integrator.u::typeof(u1start)
-    #dlogne1(r, t1, t2, Ipeak, ngas[k1], latt[k1], conf, ws[k])
-end
-
-function fast_derivs(u, p, t)
-    (conf, k1, r, Ipeak, ngas1, latt1, ws1) = p
-    (;tl, frs) = conf
-    (;props, c) = ws1
-
-    en = norm(electric_field(r, t, Ipeak, tl, latt1, props, c)) / ngas1 / co.Td
-
-    local dudt
-    try
-        dudt = derivs(u, frs, en, x=k1)
-    catch e
-        @error "error computing derivatives (field too high?)"
-        @show en u
-    end
-    return dudt
-end
 
 
 """
@@ -517,35 +434,6 @@ function mapspecies!(n1, n2, rs1, rs2)
     end
 end
 
-
-"""
-Integrate the effect a single pulse at `r` from a discharge with peak current `Ipeak` lasting
-`source_duration` from a transmission line `tl` with pre-computed propagators `props` and 
-log-attenuation `lat`.  Uses trapezoidal integration with n nodes.
-See `electric_field` for `c`.
-"""
-function dlogne1(r, t1, t2, Ipeak, gas_dens, latt, conf, ws1)
-    (;tl, time_gridpoints, keff) = conf
-    (;props, c) = ws1
-    
-    n = time_gridpoints
-    
-    @assert t2 > t1
-
-    h = (t2 - t1) / n
-    
-    function f(t)
-        return gas_dens * keff(norm(electric_field(r, t, Ipeak, tl, latt, props, c)) / gas_dens / co.Td)
-    end
-        
-    int = h * (f(t1) + f(t2)) / 2
-    for k in 1:n - 1
-        tk = h * k + t1
-        int += h * f(tk)
-    end
-
-    return int
-end
 
 
 """
@@ -579,65 +467,6 @@ function propagators!(props, tl, r)
 
 end
 
-
-"""
-Compute the log-attenuation factor at `z` from electron density `ne` and gas density `ngas`.
-`mun` is the reduced mobility of electrons. The integral is performed assuming a log-linear
-dependence of the conductivity on `z`.
-"""
-function logattenuation!(latt, z, ne, ngas, mun=8.985943e23)
-    T = promote_type(eltype(latt), eltype(z), eltype(ne), eltype(ngas), typeof(mun))
-    
-    sigma_pre = zero(T)
-    z_pre = 2 * z[begin] - z[begin + 1]
-    latt_pre = zero(T)
-    
-    for i in eachindex(z)
-        @assert ne[i] > 0
-        sigma = convert(T, co.elementary_charge) * ne[i] * mun / ngas[i]
-        dlatt = (sigma - sigma_pre) * (z[i] - z_pre) / log(sigma / sigma_pre)
-        latt[i] = latt_pre - sqrt(co.mu_0 / co.epsilon_0) * dlatt / 2
-        
-        (sigma_pre, z_pre, latt_pre) = (sigma, z[i], latt[i])
-    end
-
-    return nothing
-    # sigma = @. co.elementary_charge * ne * mun / ngas
-    # csigma = cumlogint(z, sigma)
-    
-    #return @. -sqrt(co.mu_0 / co.epsilon_0) * csigma / 2
-end
-
-
-"""
-Set the attenuation factor in `f` for all dipoles in the transmission line `tl` as
-exp(a / cos(θ)) where `a` is constant θ is the incidence angle for rays propagating 
-from each dipole towards `r`.
-"""
-function attenuation!(f, a, tl, r)
-    for i in eachindex(tl)
-        f[i] = exp(a / cosinc(pos(tl[i]), r))
-    end
-
-    return f
-end
-
-
-"""
-Cumulative integral of `y` evaluated at `x` assuming that between gridpoints `log(y)` is linear.
-""" 
-function cumlogint(x, y)
-    @assert axes(x) == axes(y)
-    
-    c = similar(y)
-    c[begin] = 0
-    
-    for i in eachindex(y)[begin: end - 1]
-        c[i + 1] = c[i] + (y[i] - y[i + 1]) * (x[i + 1] - x[i]) / log(y[i] / y[i + 1])        
-    end
-
-    return c
-end
 
 """
 Cosine of the incidence angle for ray propagating from `r1` to `r2` and inciding into a
