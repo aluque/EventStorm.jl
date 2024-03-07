@@ -96,7 +96,6 @@ function self_attenuation_derivs!(du, u, p, t)
         # Not compatible with batch:
         # (;props, c) = ws[k]
         props = ws[k].props
-        c = ws[k].c
         
         r = SA[rho, 0.0, z[k1]]
 
@@ -104,7 +103,7 @@ function self_attenuation_derivs!(du, u, p, t)
         # angle. Here we average the incidence cosine.        
         costheta = sum(tli -> cosinc(pos(tli), r), tl) ./ length(tl)
         en = (exp(-M[k + 1] / costheta) *
-            norm(electric_field(r, t, Ipeak, tl, 0.0, props, c)) / ngas[k1] / co.Td)
+            norm(free_electric_field(r, t, Ipeak, tl, props)) / ngas[k1] / co.Td)
 
         sigma = co.elementary_charge * n[electrons, k] * mun / ngas[k1]
 

@@ -440,13 +440,27 @@ end
 Compute the electric field at `z[i]`, `ρ` produced by a peak current `Ipeak` when the log-attenuation
 is `latt`. `props` contains the propagators and `c` the attenuation factor for each dipole. 
 """
-function electric_field(r, t, Ipeak, tl, latt, props, c)
-    
+function attenuated_electric_field(r, t, Ipeak, tl, latt, props, c)    
     attenuation!(c, latt, tl, r)
     field = zero(SVector{3, typeof(t)})
     
     for j in eachindex(tl)
         field += total(remotefield(tl[j], props[j], t) * c[j])
+    end
+
+    return field * Ipeak
+end
+
+
+"""
+Compute the free-space electric field at `z[i]`, `ρ` produced by a peak current
+`Ipeak` when the log-attenuation is `latt`. `props` contains the propagators.
+"""
+function free_electric_field(r, t, Ipeak, tl, props)    
+    field = zero(SVector{3, typeof(t)})
+    
+    for j in eachindex(tl)
+        field += total(remotefield(tl[j], props[j], t))
     end
 
     return field * Ipeak
