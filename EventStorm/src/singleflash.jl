@@ -32,9 +32,16 @@ function singleflash_setup(conf, ws)
 end
 
 
-function singleflash_run!(n, integrator, rho, Ipeak, conf, ws)
-    (;z, ngas, frs, rs, n1, krange, tl) = conf
+function singleflash_run!(n, integrator, rho, Ipeak, conf, ws; extra_time=1e-3)
+    (;z, r1, r2, source_duration, ngas, frs, rs, n1, krange, tl) = conf
     p = (;rho, Ipeak, conf, ws)
+
+    (t1, _) = tminmax(SA[rho, 0.0, z[krange[begin]]], r1, r2)
+    (_, t2) = tminmax(SA[rho, 0.0, z[krange[end]]], r1, r2)
+
+    # We allow for an extra time even if the field vanishes we still may have some fast
+    # reactions going on for a while.  Perhaps 1 ms is too short; we have to experiment with this.
+    t2 += source_duration + extra_time
 
     n1 = integrator.u.x[1]
 
@@ -55,19 +62,11 @@ function singleflash_run!(n, integrator, rho, Ipeak, conf, ws)
     M = integrator.u.x[2]
     M .= 0
     u0 = ArrayPartition(n1, M)
-
-    reinit!(integrator, u0)
+    
+    reinit!(integrator, u0, t0=t1, tf=t2)
     integrator.p = p
 
-    @show @allocated for i in integrator; end
-
-    #solve!(integrator)
-    
-    # ts = range(0, stop = 1e-3, length=10000 + 1)
-    # ef = zeros(length(krange), length(ts))
-    # for (i, (u, t)) in enumerate(TimeChoiceIterator(integrator, ts))
-    #     #compute_field!(@view(ef[:, i]), u, p, t)
-    # end
+    solve!(integrator)
 
     return NamedTuple(Base.@locals)
 
