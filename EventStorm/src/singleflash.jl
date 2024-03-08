@@ -2,6 +2,31 @@
 Simulate a single flash.
 =#
 
+"""
+Call-back for the slow-system solver, whenever a flash is encountered.
+"""
+function flash!(integrator)
+    (;conf, ws, flash_integrator) = integrator.p
+    (;z, ngas, frs, rs, Ipeak_median, Ipeak_log_std, ρmin, ρmax) = conf
+    n = integrator.u
+
+    @info "Simulating flash at t = " * string(integrator.t)
+    
+    # Sample from distributions
+    rho = sqrt((ρmax^2 - ρmin^2) * rand() + ρmin^2)
+    Ipeak = exp(log(Ipeak_median) + randn() * Ipeak_log_std)
+    
+    singleflash_run!(flash_integrator, n, rho, Ipeak, conf, ws)
+    n1 = flash_integrator.u.x[1]
+
+    @batch for k in axes(n, 2)
+        mapspecies!(@view(n[:, k]), @view(n1[:, k]), rs, frs)
+    end
+
+    u_modified!(integrator, true)
+end
+
+
 function singleflash_setup(conf, ws)
     # rho and Ipeak set on a per-event basis
     p = (;rho=0.0, Ipeak=1.0, conf, ws)
@@ -32,7 +57,7 @@ function singleflash_setup(conf, ws)
 end
 
 
-function singleflash_run!(n, integrator, rho, Ipeak, conf, ws; extra_time=1e-3)
+function singleflash_run!(integrator, n, rho, Ipeak, conf, ws; extra_time=1e-3)
     (;z, r1, r2, source_duration, ngas, frs, rs, n1, krange, tl) = conf
     p = (;rho, Ipeak, conf, ws)
 
@@ -67,9 +92,6 @@ function singleflash_run!(n, integrator, rho, Ipeak, conf, ws; extra_time=1e-3)
     integrator.p = p
 
     solve!(integrator)
-
-    return NamedTuple(Base.@locals)
-
 end
 
 

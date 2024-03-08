@@ -3,7 +3,7 @@ This file is for code useful in debugging or old code that is no longer in use f
 algorithm.  Note that parts of this may not work any longer.
 =#
 
-function flash!(integrator)
+function old_flash!(integrator)
     (;conf, ws) = integrator.p
     (;latt, z, ne1, ngas, frs, rs, Ipeak_median, Ipeak_log_std, u1, ρmin, ρmax, krange) = conf
     u = integrator.u
