@@ -2,7 +2,7 @@
 
 julia_version = "1.10.0"
 manifest_format = "2.0"
-project_hash = "374967dcc8352a96c99307354092c7a27ad03a1a"
+project_hash = "4d7be0f2f1235cdd79b72ae71b1bf09f10c3772f"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "332e5d7baeff8497b923b730b994fa480601efc7"
@@ -106,6 +106,12 @@ weakdeps = ["SparseArrays"]
 
 [[deps.Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
+
+[[deps.BenchmarkTools]]
+deps = ["JSON", "Logging", "Printf", "Profile", "Statistics", "UUIDs"]
+git-tree-sha1 = "f1dff6729bc61f4d49e140da1af55dcd1ac97b2f"
+uuid = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
+version = "1.5.0"
 
 [[deps.BitTwiddlingConvenienceFunctions]]
 deps = ["Static"]
@@ -458,7 +464,7 @@ uuid = "f151be2c-9106-41f4-ab19-57ee4f262869"
 version = "0.6.4"
 
 [[deps.EventStorm]]
-deps = ["CSV", "Chemise", "Constants", "DataFrames", "Dates", "DiffEqCallbacks", "DifferentialEquations", "DipoleRadiators", "Distributions", "Interpolations", "LinearAlgebra", "Polyester", "Printf", "PyPlot", "StaticArrays"]
+deps = ["CSV", "Chemise", "Constants", "DataFrames", "Dates", "DiffEqCallbacks", "DifferentialEquations", "DipoleRadiators", "Distributions", "DocStringExtensions", "Interpolations", "LinearAlgebra", "Polyester", "Printf", "PyPlot", "RecursiveArrayTools", "StaticArrays"]
 path = "EventStorm"
 uuid = "e1916a7b-5356-4ae9-b9de-32b77d3c8d94"
 version = "0.1.0"
@@ -1101,6 +1107,10 @@ version = "0.5.5"
 [[deps.Printf]]
 deps = ["Unicode"]
 uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+
+[[deps.Profile]]
+deps = ["Printf"]
+uuid = "9abbd945-dff8-562f-b5e8-e1ebf5ef1b79"
 
 [[deps.PyCall]]
 deps = ["Conda", "Dates", "Libdl", "LinearAlgebra", "MacroTools", "Serialization", "VersionParsing"]
