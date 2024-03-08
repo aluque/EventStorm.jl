@@ -151,6 +151,21 @@ end
 
 load_nrlmsis(fname::String) = load_nrlmsis(Float64, fname)
 
+"""
+Cumulative integral of `y` evaluated at `x` assuming that between gridpoints `log(y)` is linear.
+""" 
+function cumlogint(x, y)
+    @assert axes(x) == axes(y)
+    
+    c = similar(y)
+    c[begin] = 0
+    
+    for i in eachindex(y)[begin: end - 1]
+        c[i + 1] = c[i] + (y[i] - y[i + 1]) * (x[i + 1] - x[i]) / log(y[i] / y[i + 1])        
+    end
+
+    return c
+end
 
 """    
 Guess a range from a vector `v`.  Raises a warning if the values are too far 

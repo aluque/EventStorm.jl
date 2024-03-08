@@ -151,19 +151,4 @@ function attenuation!(f, a, tl, r)
     return f
 end
 
-"""
-Cumulative integral of `y` evaluated at `x` assuming that between gridpoints `log(y)` is linear.
-""" 
-function cumlogint(x, y)
-    @assert axes(x) == axes(y)
-    
-    c = similar(y)
-    c[begin] = 0
-    
-    for i in eachindex(y)[begin: end - 1]
-        c[i + 1] = c[i] + (y[i] - y[i + 1]) * (x[i + 1] - x[i]) / log(y[i] / y[i + 1])        
-    end
-
-    return c
-end
 
