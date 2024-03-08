@@ -38,7 +38,7 @@ using DipoleRadiators
 using DipoleRadiators: FieldComponents, Propagator, image, pos, remotefield
 using Chemise
 
-const DATA_DIR = joinpath(@__DIR__, "..", "data")
+const DATA_DIR = normpath(joinpath(@__DIR__, "..", "data"))
 
 include("softstep.jl")
 include("electrons.jl")
@@ -46,75 +46,94 @@ include("load_data.jl")
 include("lxcat.jl")
 include("singleflash.jl")
 include("scratch.jl")
+include("inputs.jl")
 
-function main(;
-              T = 200,
-              Te = T,
+function _main(;
+               # Place-holders filled by wrap_input in inputs.jl
+               _input=nothing,
+               _date=nothing,
+               _git_commit=nothing,
+               _git_dirty=nothing,
+               
+               T = 200,
+               Te = T,
+               
+               h=0 * co.kilo,
+               l=8 * co.kilo,
+               
+               rise=2 * co.micro,
+               decay=10 * co.micro,
+               plateau=0.0,
+               
+               # number of dipoles
+               ndipoles=100,
+               
+               # log-normal distribution for the peak currents [Nag 2016], according to Slyunyaev2018
+               # Ipeak_median = 13 * co.kilo,
+               # Ipeak_log_std = 0.77,
+               
+               # log-normal distribution for the peak currents [Berger 1975], according to Slyunyaev2018
+               # Ipeak_median = 32 * co.kilo,
+               # Ipeak_log_std = 0.56,
+               
+               # log-normal distribution for the peak currents from Ingrid's paper (see fit_ingrid.jl)
+               Ipeak_median = 20.36 * co.kilo,
+               Ipeak_log_std = 1.14,
+               
+               # Duration of the storm
+               storm_duration = 1 * co.hour,
+               
+               # Pre and post relaxation times
+               pre_relax = 20000,
+               
+               post_relax = 10000,
+               
+               # Minimum radius to consider influence
+               ρmin = 70 * co.kilo,
+               
+               # Maximum radius to consider effects
+               ρmax = 100 * co.kilo,
+               
+               # boundaries for integration
+               hmin = 70 * co.kilo,
+               hmax = 95 * co.kilo,
+               
+               # Storm rate in flashes / m^2 / s
+               storm_rate = 1000 / (3600 * 1e5^2),
+               
+               # Air composition
+               comp=Dict("N2" => 0.8, "O2" => 0.2),
+               
+               # Simulation name.
+               name = splitext(splitdir(_input)[2])[1],
+               
+               outfolder = joinpath(splitdir(_input)[1], name,
+                                    String(rand('A':'Z', 3)) * "-" * Dates.format(now(), "yyyymmdd-HHMMss")),
 
-              h=0 * co.kilo,
-              l=8 * co.kilo,
-
-              rise=2 * co.micro,
-              decay=10 * co.micro,
-              plateau=0.0,
-              
-              # number of dipoles
-              ndipoles=100,
-
-              # log-normal distribution for the peak currents [Nag 2016], according to Slyunyaev2018
-              # Ipeak_median = 13 * co.kilo,
-              # Ipeak_log_std = 0.77,
-
-              # log-normal distribution for the peak currents [Berger 1975], according to Slyunyaev2018
-              # Ipeak_median = 32 * co.kilo,
-              # Ipeak_log_std = 0.56,
-
-              # log-normal distribution for the peak currents from Ingrid's paper (see fit_ingrid.jl)
-              Ipeak_median = 20.36 * co.kilo,
-              Ipeak_log_std = 1.14,
-              
-              # Duration of the storm
-              storm_duration = 1 * co.hour,
-
-              # Pre and post relaxation times
-              pre_relax = 20000,
-
-              post_relax = 10000,
-              
-              # number of quadrature points
-              nquad = 16,
-              
-              # Minimum radius to consider influence
-              ρmin = 70 * co.kilo,
-
-              # Maximum radius to consider effects
-              ρmax = 100 * co.kilo,
-
-              # boundaries for integration
-              hmin = 70 * co.kilo,
-              hmax = 95 * co.kilo,
-              
-              # Storm rate in flashes / m^2 / s
-              storm_rate = 1000 / (3600 * 1e5^2),
-
-              # Air composition
-              comp=Dict("N2" => 0.8, "O2" => 0.2),
-
-              # Output folder
-              outfolder = expanduser("~/data/storm/" * String(rand('A':'Z', 3)) * "-" * Dates.format(now(), "yyyymmdd-HHMMss")),
-              
-              # Time between outputs
-              output_dt = 300,
-              
-              # resolution
-              points_per_km = 2,
-
-              # If not nothing, use a different gas density file
-              gas_density_fname = nothing,
-              
-              # If false, returns the configuration but does not run the simulation
-              run = true,
+               # Time between outputs
+               output_dt = 300,
+               
+               # resolution
+               points_per_km = 2,
+               
+               # If not nothing, use a different gas density file
+               gas_density_fname = nothing,
+               
+               # If false, returns the configuration but does not run the simulation
+               run = true,
               )
+
+    ## 
+    ## Make sure that output folder exists
+    ##
+    if !isdir(outfolder)
+        mkpath(outfolder)
+        @info "$(outfolder) created"
+    else
+        @warn "$(outfolder) already exists and output may overwrite exisiting files."
+    end
+
+    writejl(joinpath(outfolder, name * ".jl"), _main, Base.@locals)
     
     Polyester.reset_threads!()
 
@@ -311,16 +330,6 @@ function main(;
     
     if !run
         return NamedTuple(Base.@locals)
-    end
-
-    ## 
-    ## Make sure that output folder exists
-    ##
-    if !isdir(outfolder)
-        mkdir(outfolder)
-        @info "$(outfolder) created"
-    else
-        @warn "$(outfolder) already exists and output may overwrite exisiting files."
     end
 
 
@@ -558,9 +567,5 @@ function tminmax(rf, r1, r2)
 end
 
 
-end
-
-if abspath(PROGRAM_FILE) == @__FILE__
-    EventStorm.main()
 end
 
