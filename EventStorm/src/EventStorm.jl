@@ -45,6 +45,7 @@ include("electrons.jl")
 include("load_data.jl")
 include("lxcat.jl")
 include("singleflash.jl")
+include("scratch.jl")
 
 function main(;
               T = 200,
@@ -278,32 +279,43 @@ function main(;
     
     ws = [Workspace(Float64, length(tl)) for _ in krange]
     
-    n0 = zeros(nspecies(rs), length(krange))
-    for k in axes(n0, 2)
-        k1 = krange[k]
-        n0[:, k] = Chemise.init(rs, Dict(:e => ne[k1], :O3 => 1e9), 0.0)
-    end
 
-    # Events per unit time
+    ##
+    ## Sample flash times
+    ##
     ν = storm_rate * π * (ρmax^2 - ρmin^2)
     nevents = convert(Int, rand(Poisson(ν * storm_duration)))
     @info "Number of flashes to simulate:" nevents
     event_times = pre_relax .+ storm_duration .* rand(nevents)
     sort!(event_times)
     
+    ##
+    ## Set up the flash sub-solver
+    ##
+    flash_integrator, flash_prob = singleflash_setup(conf, ws)
+
+
+    ##
+    ## Set up the long-time solver
+    ##
+    n0 = zeros(nspecies(rs), length(krange))
+    for k in axes(n0, 2)
+        k1 = krange[k]
+        n0[:, k] = Chemise.init(rs, Dict(:e => ne[k1], :O3 => 1e9), 0.0)
+    end
+
     cb = DiffEqCallbacks.PresetTimeCallback(event_times, flash!, save_positions=(false, false))
     
     tspan = (0.0, pre_relax + storm_duration + post_relax)
-    prob = ODEProblem(derivs!, n0, tspan, (;conf, ws))
-
+    prob = ODEProblem(derivs!, n0, tspan, (;conf, ws, flash_integrator))
+    
     if !run
         return NamedTuple(Base.@locals)
     end
 
-    #integrator = init(prob, Rodas4P())
-    i = 0
-    times = Float64[]
-
+    ## 
+    ## Make sure that output folder exists
+    ##
     if !isdir(outfolder)
         mkdir(outfolder)
         @info "$(outfolder) created"
@@ -311,12 +323,16 @@ function main(;
         @warn "$(outfolder) already exists and output may overwrite exisiting files."
     end
 
-    # integrator = init(prob, Rodas4P(), save_everystep=false, callback=cb)
-    # flash!(integrator)
-    
-    # return NamedTuple(Base.@locals)
+
+    ##
+    ## Solve the ODEs
+    ##
     sol = solve(prob, Rodas4P(), saveat=output_dt, callback=cb)
 
+
+    ##
+    ## Write output
+    ##
     for (i, n) in enumerate(sol.u)
         fname = joinpath(outfolder, @sprintf("n-%04d.csv", i))
         
