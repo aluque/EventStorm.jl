@@ -24,6 +24,7 @@ using RecursiveArrayTools
 using Printf
 using Distributions
 using Dates
+using Random
 
 using DocStringExtensions
 
@@ -110,6 +111,8 @@ function _main(;
                outfolder = joinpath(splitdir(_input)[1], name,
                                     String(rand('A':'Z', 3)) * "-" * Dates.format(now(), "yyyymmdd-HHMMss")),
 
+               random_seed = rand(Int),
+               
                # Time between outputs
                output_dt = 300,
                
@@ -302,6 +305,7 @@ function _main(;
     ##
     ## Sample flash times
     ##
+    Random.seed!(random_seed)
     ν = storm_rate * π * (ρmax^2 - ρmin^2)
     nevents = convert(Int, rand(Poisson(ν * storm_duration)))
     @info "Number of flashes to simulate:" nevents
