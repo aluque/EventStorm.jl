@@ -1,7 +1,7 @@
 #=
 This is generic code to handle inputs.  The idea is that you define the input parameters
 and their default values simply by adding kwargs to your `main` function (or whatever you want to call
-it). The you can use `wrap_main(main, inputfile)` to read `inputfile` and update whatever parameters
+it). The you can use `wrap_input(main, inputfile)` to read `inputfile` and update whatever parameters
 are contained there. Now inputfile can be either julia (recommended but unsafe if you do not trust
 the source) or toml (safe but inconvenient). Note also that TOML cannot handle julia-specific argument
 types (anything other than numbers, strings or booleans), which are forced to take default values.
@@ -72,7 +72,7 @@ end
 
 
 """
-Read a julia input file and produces a `NamedTuple` with the values defined there that are also
+Read a toml input file and produces a `NamedTuple` with the values defined there that are also
 kwargs of the function `f`.
 """
 function readtoml(f, input::String)

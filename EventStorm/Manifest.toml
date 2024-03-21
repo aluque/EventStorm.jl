@@ -137,7 +137,7 @@ weakdeps = ["SparseArrays"]
     ChainRulesCoreSparseArraysExt = "SparseArrays"
 
 [[deps.Chemise]]
-deps = ["DocStringExtensions", "StaticArrays"]
+deps = ["DocStringExtensions", "MacroTools", "StaticArrays"]
 path = "/Users/luque/projects/Chemise.jl/"
 uuid = "dce8f835-6e30-4030-88d5-a4861057530f"
 version = "1.0.0-DEV"

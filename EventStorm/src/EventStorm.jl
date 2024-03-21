@@ -45,6 +45,7 @@ include("softstep.jl")
 include("electrons.jl")
 include("load_data.jl")
 include("lxcat.jl")
+include("chemistry.jl")
 include("singleflash.jl")
 include("scratch.jl")
 include("inputs.jl")
@@ -80,27 +81,25 @@ function _main(;
                # log-normal distribution for the peak currents from Ingrid's paper (see fit_ingrid.jl)
                Ipeak_median = 20.36 * co.kilo,
                Ipeak_log_std = 1.14,
-               
-               # Duration of the storm
-               storm_duration = 1 * co.hour,
-               
-               # Pre and post relaxation times
-               pre_relax = 20000,
-               
-               post_relax = 10000,
-               
-               # Minimum radius to consider influence
-               ρmin = 70 * co.kilo,
-               
-               # Maximum radius to consider effects
-               ρmax = 100 * co.kilo,
-               
+                              
                # boundaries for integration
                hmin = 70 * co.kilo,
                hmax = 95 * co.kilo,
                
-               # Storm rate in flashes / m^2 / s
-               storm_rate = 1000 / (3600 * 1e5^2),
+               # The storm is simulated as gaussian in time and both spatial dimensions;
+               # The duration extension here are standard deviations.
+               storm_duration = 1.5 * co.hour,
+               storm_extension = 100 * co.kilo,
+               storm_peak_time = 4 * co.hour,
+                              
+               # Expected number of flashes in the storm (actual number may differ).
+               storm_expected_flashes = 1000.0,
+
+               # Distance of center of the storm to the observer.
+               storm_distance = 100 * co.kilo,
+               
+               # Final time of the simulation
+               final_time = storm_peak_time + 3 * storm_duration,
                
                # Air composition
                comp=Dict("N2" => 0.8, "O2" => 0.2),
@@ -111,7 +110,7 @@ function _main(;
                outfolder = joinpath(splitdir(_input)[1], name,
                                     String(rand('A':'Z', 3)) * "-" * Dates.format(now(), "yyyymmdd-HHMMss")),
 
-               random_seed = rand(Int),
+               random_seed = rand(UInt),
                
                # Time between outputs
                output_dt = 300,
@@ -155,6 +154,9 @@ function _main(;
     hcut = 50 * co.kilo
     z = LinRange(hcut, hmax, ceil(Int, (hmax - hcut) * points_per_km / co.kilo))
 
+    ##
+    ## READ DENSITY PROFILES
+    ##
     gas_profiles = load_gas_profiles(joinpath(DATA_DIR, "US_Std_1976.dat"))
     waccm_profiles = load_waccm(joinpath(DATA_DIR, "waccm_fg_l38.dat"))
     cr_profile = load_cr_profile(joinpath(DATA_DIR, "Thomas1974_Production.dat"))    
@@ -174,6 +176,9 @@ function _main(;
     n_o = interp_gas_profile(waccm_profiles, :O, z)
     n_no = interp_gas_profile(waccm_profiles, :NO, z)
 
+    ##
+    ## REACTION SETS (see chemistry.jl)
+    ##    
     # O2 absorption of ionizing Lyman α and β. Flux and cross sections from Kotovsky 2016b
     R = 1e6 * co.centi^-2
     # At 1025.7 A
@@ -184,120 +189,20 @@ function _main(;
     # At 1215.6 A
     lyman_α = @. 5e3 * R * exp(-nrlmsis.cum_o2(z) * 1.04e-20 * co.centi^2)
     
+    rs = slow_reactions(T, comp; ngas, n_o, n_o3, n_no, lyman_β, lyman_α, q)    
+    frs = fast_reactions(comp; ngas)
+
+    ##
+    ## CONFIG AND WORKSPACE
+    ##
     kmin = searchsortedfirst(z, hmin)
     kmax = searchsortedlast(z, hmax)
     krange = kmin:kmax
     
-    ##
-    ## SLOW, FIELD-INDEPENDENT REACTION SET
-    ##
-    
-    # From Kotovsky & Moore 2016
-    F = 1.74e-18 + 1.93e-17 * sind(35)^4
-    local rs, frs
-
-    ion_ion_attachment = 10 * 6e-8 * co.centi^3 * sqrt(300 / T)
-    let compN2 = comp["N2"], compO2 = comp["O2"], ngas=ngas, n_o=n_o, n_o3=n_o3, n_no=n_no, lyman_β=lyman_β,
-        lyman_α=lyman_α, q=q
-        
-        rs = ReactionSet(
-            ["e + O3 -> O- + O2" => Biblio(1e-17, "ref"),
-             
-             "e + O3 -> O2- + O" => Biblio(1e-15, "ref"),
-             
-             "e + O2 + O2 -> O2- + O2" =>
-             Biblio(1.4e-41 * (300 / Te) * exp(-600 / T) * exp(700 * (Te - T) / Te / T), "ref"),
-             
-             "e + O2 + N2 -> O2- + N2" =>
-             Biblio(1.07e-43 * (300 / Te)^2 * exp(-70 / T) * exp(1500 * (Te - T) / Te / T), "ref"),
-             
-             "O- + O2 -> e + O3" => Biblio(5.0e-21, "ref"),
-             
-             "O- + O -> e + O2" => Biblio(2.3e-16, "ref"),
-             
-             "O2- + O -> e + O3" => Biblio(3.3e-16, "ref"),
-             
-             "O2- + O -> O- + O2" => Biblio(3.310e-16, "ref"),
-
-             "O- + O3 -> O3- + O" => 5.30e-16,
-             "O- + O2 + N2 -> O3- + N2" => 1.10e-42 * (300 / T),
-             "O- + O2 + O2 -> O3- + O2" => 1.10e-42 * (300 / T),
-             "O2- + O3 -> O3- + O2" => 4e-17,
-             
-             # Lyman-β
-             "O2 + β -> e + O2+" => 0.90e-18 * co.centi^2,
-
-             # Lyman-α
-             "NO + α -> e + NO+" => 2.02e-18 * co.centi^2,
-             
-             # Constant rate of e/pos-ion recombination.  Must be improved
-             # "e + N2+ -> " => Biblio(3e-13 * 300 / Te + 4e-13 * (300 / Te)^1.5, "Gordillo-Vazquez2016/JGR"),
-             # "e + O2+ -> " => Biblio(3e-13 * 300 / Te + 4e-13 * (300 / Te)^1.5, "Gordillo-Vazquez2016/JGR"),
-             # "e + NO+ -> " => Biblio(3e-13 * 300 / Te + 4e-13 * (300 / Te)^1.5, "Gordillo-Vazquez2016/JGR"),
-             "e + N2+ -> " => Biblio(4.2e-12, "Gordillo-Vazquez2016/JGR"),
-             "e + O2+ -> " => Biblio(4.2e-12, "Gordillo-Vazquez2016/JGR"),
-             "e + NO+ -> " => Biblio(4.2e-12, "Gordillo-Vazquez2016/JGR"),
-             
-             # This was for cluster recombination
-             # "e + e -> e" => Biblio(1e-11, "ref"),
-             
-             # Production rate of electrons from cosmic rays. 
-             "O2 -> e + O2+" =>  Biblio(F, "ref"),
-             "N2 -> e + N2+" =>  Biblio(F, "ref"),
-
-             "O- + N2+ ->" => ion_ion_attachment,
-             "O- + O2+ ->" => ion_ion_attachment,
-             "O- + NO+ ->" => ion_ion_attachment,
-             "O2- + N2+ ->" => ion_ion_attachment,
-             "O2- + O2+ ->" => ion_ion_attachment,
-             "O2- + NO+ ->" => ion_ion_attachment,
-             "O3- + N2+ ->" => ion_ion_attachment,
-             "O3- + O2+ ->" => ion_ion_attachment,
-             "O3- + NO+ ->" => ion_ion_attachment,
-            
-             # Phony reaction to keep track of second positive emissions
-             "SPS -> SPS" => 1.0
-             ];
-            
-            fix = [
-                :N2 => j -> compN2 * ngas[j],
-                :O2 => j -> compO2 * ngas[j],
-                :O => j -> n_o[j],
-                :O3 => j -> n_o3[j],
-                :NO => j -> n_no[j],
-                :Q => j -> q[j],
-                :β => j -> lyman_β[j],
-                :α => j -> lyman_α[j],
-            ]
-        )
-    end
-    
-    ##
-    ## FAST, FIELD-DEPENDENT REACTION SET
-    ##
-    lx = LxCatSwarmData.load(joinpath(DATA_DIR, "swarm/LxCat_Phelps_20230914.txt"))
-    tbl = loadtable(eachcol(lx.data), xcol=:en)
-    
-    let compN2 = comp["N2"], compO2 = comp["O2"], ngas=ngas
-        frs = ReactionSet(["e + N2 -> 2 * e + N2+" => RateLookup(tbl, :C25),
-                           "e + N2 -> 2 * e + N2+" => RateLookup(tbl, :C26),
-                           "e + O2 -> 2 * e + O2+" => RateLookup(tbl, :C43),
-                           "e + O2 -> O + O-" => RateLookup(tbl, :C28),
-                           "e + O2 + M -> O2- + M" => RateLookup(tbl, :C27),
-                           # Instantaneous emission
-                           "e + N2 -> e + SPS" => RateLookup(tbl, :C10)
-                           ];
-                          fix = [:N2 => j -> compN2 * ngas[j],
-                                 :O2 => j -> compO2 * ngas[j],
-                                 
-                                 # The 1e6 comes from Bolsig+'s normalization of 3-body
-                                 :M => j -> ngas[j] / 1e6])
-    end
-        
     n1 = zeros(nspecies(frs), length(krange))
     
-    conf = Config(;z, ngas, krange, ρmin, ρmax, r1, r2, source_duration, Ipeak_median, Ipeak_log_std,
-                  tl, storm_rate, n1, rs, frs)
+    conf = Config(;z, ngas, krange, r1, r2, source_duration, Ipeak_median, Ipeak_log_std,
+                  tl, storm_distance, storm_extension, n1, rs, frs)
     
     ws = [Workspace(Float64, length(tl)) for _ in krange]
     
@@ -306,10 +211,9 @@ function _main(;
     ## Sample flash times
     ##
     Random.seed!(random_seed)
-    ν = storm_rate * π * (ρmax^2 - ρmin^2)
-    nevents = convert(Int, rand(Poisson(ν * storm_duration)))
+    nevents = convert(Int, rand(Poisson(storm_expected_flashes)))
     @info "Number of flashes to simulate:" nevents
-    event_times = pre_relax .+ storm_duration .* rand(nevents)
+    event_times = storm_peak_time .+ storm_duration .* randn(nevents)
     sort!(event_times)
     
     ##
@@ -329,7 +233,7 @@ function _main(;
 
     cb = DiffEqCallbacks.PresetTimeCallback(event_times, flash!, save_positions=(false, false))
     
-    tspan = (0.0, pre_relax + storm_duration + post_relax)
+    tspan = (0.0, final_time)
     prob = ODEProblem(derivs!, n0, tspan, (;conf, ws, flash_integrator))
     
     if !run
@@ -367,11 +271,11 @@ end
     "Range kmin:kmax where electron density is allowed to change"
     krange::UnitRange{Int}
     
-    "Minimum radius to consider influence"
-    ρmin::T
+    "Distance observer-center of storm"
+    storm_distance::T
     
-    "Maximum radius to consider influence"
-    ρmax::T
+    "Standard deviation of the storm area"
+    storm_extension::T
 
     "Start point of the source discharge"
     r1::SVector{3, T}
@@ -391,9 +295,6 @@ end
     "Transmission line dipoles"
     tl::Vector{Dip}
         
-    "Number of flashes per unit time and area"
-    storm_rate::T
-    
     "Space for densities in the fast reaction set"
     n1::Array{T, 2}
     
@@ -569,6 +470,7 @@ function tminmax(rf, r1, r2)
     
     return sqrt(minl2) / co.c, sqrt(maxl2) / co.c
 end
+
 
 
 end

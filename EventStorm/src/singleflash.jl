@@ -7,13 +7,13 @@ Call-back for the slow-system solver, whenever a flash is encountered.
 """
 function flash!(integrator)
     (;conf, ws, flash_integrator) = integrator.p
-    (;z, ngas, frs, rs, Ipeak_median, Ipeak_log_std, ρmin, ρmax) = conf
+    (;z, ngas, frs, rs, Ipeak_median, Ipeak_log_std, storm_distance, storm_extension) = conf
     n = integrator.u
 
     @info "Simulating flash at t = " * string(integrator.t)
     
     # Sample from distributions
-    rho = sqrt((ρmax^2 - ρmin^2) * rand() + ρmin^2)
+    rho = sqrt((storm_extension * randn() + storm_distance)^2 + (storm_extension * randn())^2)
     Ipeak = exp(log(Ipeak_median) + randn() * Ipeak_log_std)
     
     singleflash_run!(flash_integrator, n, rho, Ipeak, conf, ws)
@@ -100,7 +100,7 @@ Compute the derivatives of the variables in the self-attenuation scheme: M and n
 """
 function self_attenuation_derivs!(du, u, p, t)
     (;rho, Ipeak, conf, ws) = p
-    (;z, ngas, frs, rs, n1, ρmin, ρmax, krange, tl) = conf
+    (;z, ngas, frs, rs, n1, krange, tl) = conf
 
     mun = 8.985943e23
     
