@@ -176,6 +176,10 @@ function _main(;
     n_o = interp_gas_profile(waccm_profiles, :O, z)
     n_no = interp_gas_profile(waccm_profiles, :NO, z)
 
+    # Following Brasseur and Salomon, CO2 and H2O seem to be important for negative ion chemistry
+    n_co2 = interp_gas_profile(gas_profiles, :CO2, z)
+    n_h2o = interp_gas_profile(gas_profiles, :H2O, z)
+    
     ##
     ## REACTION SETS (see chemistry.jl)
     ##    
@@ -188,9 +192,24 @@ function _main(;
     # 1.04e-20 cm^2 citing Preston.
     # At 1215.6 A
     lyman_α = @. 5e3 * R * exp(-nrlmsis.cum_o2(z) * 1.04e-20 * co.centi^2)
+
+    fixed_dens = [:N2 => comp["N2"] .* ngas,
+                  :O2 => comp["O2"] .* ngas,
+                  :M => ngas,
+                  :O => n_o,
+                  :O3 => n_o3,
+                  :NO => n_no,
+                  :CO2 => n_co2,
+                  :H2O => n_h2o,
+                  :Q => q,
+                  :β => lyman_β,
+                  :α => lyman_α]
+
+    rs = slow_reactions(T, fixed_dens)
+    @info "Number of SLOW reactions: $(length(rs.reactions))"
     
-    rs = slow_reactions(T, comp; ngas, n_o, n_o3, n_no, lyman_β, lyman_α, q)    
     frs = fast_reactions(comp; ngas)
+    @info "Number of FAST reactions: $(length(frs.reactions))"
 
     ##
     ## CONFIG AND WORKSPACE
