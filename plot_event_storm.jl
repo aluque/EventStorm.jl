@@ -48,7 +48,7 @@ function pcolor_profiles(folder, s=:e; log=true, cmap="gnuplot2", kw...)
     plt.pcolormesh(times.t, z, v; cmap, kw...)
 end
 
-function plot_slice(folder, zslice, s=:e; kw...)
+function plot_slice(folder, zslice, s::Symbol=:e; kw...)
     times = CSV.read(joinpath(folder, "times.csv"), DataFrame)
     z = nothing
     list = map(eachindex(times.t)) do i
@@ -59,8 +59,12 @@ function plot_slice(folder, zslice, s=:e; kw...)
     end
     iz = searchsortedfirst(z, zslice)
     n = [item[iz] for item in list]
-    plt.plot(times.t, n; kw...)
+    plt.plot(times.t, n; label=string(s), kw...)
 end
+
+plot_slice(folder, zslice, s::String; kw...) = plot_slice(folder, zslice, Symbol(s); kw...)
+plot_slice(folder, zslice, v::AbstractVector; kw...) = foreach(s -> plot_slice(folder, zslice, s; kw...), v)
+
 
 end
 
