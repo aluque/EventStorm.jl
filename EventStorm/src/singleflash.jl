@@ -155,14 +155,13 @@ function compute_field!(ef, u, p, t, reduced=false)
         # Not compatible with batch:
         # (;props, c) = ws[k]
         props = ws[k].props
-        c = ws[k].c
         r = SA[rho, 0.0, z[k1]]
         
         # Think about this: we have to assume a planar wave so we have to select the 'best' incidence
         # angle. Here we use the angle with the first dipole
         costheta = sum(tli -> cosinc(pos(tli), r), tl) / length(tl)
-        
-        ef[k] = (exp(-M[k + 1] / costheta) * norm(electric_field(r, t, Ipeak, tl, 0.0, props, c)))
+
+        ef[k] = (exp(-M[k + 1] / costheta) * norm(free_electric_field(r, t, Ipeak, tl, props)))
         
         if reduced
             ef[k] = ef[k] / ngas[k1] / co.Td
