@@ -30,7 +30,7 @@ end
 function singleflash_setup(conf, ws)
     # rho and Ipeak set on a per-event basis
     p = (;rho=0.0, Ipeak=1.0, conf, ws)
-    (;z, tl, n1) = conf
+    (;z, tl, n1, save_flash) = conf
     
     (;frs, krange) = conf
 
@@ -50,8 +50,9 @@ function singleflash_setup(conf, ws)
 
     prob = ODEProblem{true}(self_attenuation_derivs!, u0, (0, 1e-3), p)
     integrator = init(prob, Tsit5(), reltol=1e-4,
-                      dense=false, save_everystep = false, save_start=false, save_end=true,
-                      initialize_save=false)
+                      dense=false, save_everystep=save_flash, save_start=save_flash,
+                      save_end=save_flash,
+                      initialize_save=save_flash)
 
     return (;integrator, prob)
 end
