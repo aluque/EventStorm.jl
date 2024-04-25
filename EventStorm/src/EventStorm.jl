@@ -145,7 +145,7 @@ function _main(;
 
     # No absorption below this line
     hcut = 50 * co.kilo
-    z = LinRange(hcut, hmax, ceil(Int, (hmax - hcut) * points_per_km / co.kilo))
+    z = LinRange(hcut, hmax, 1 + ceil(Int, (hmax - hcut) * points_per_km / co.kilo))
 
     ##
     ## READ DENSITY PROFILES
