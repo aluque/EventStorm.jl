@@ -66,6 +66,7 @@ function _main(;
                rise=2 * co.micro,
                decay=10 * co.micro,
                plateau=0.0,
+               pulse_speed=2e8,
                
                # number of dipoles
                ndipoles=100,
@@ -148,7 +149,7 @@ function _main(;
     # A time duration that includes the full source
     source_duration = rise + decay + plateau
     
-    tl = trans_line(source, ndipoles)
+    tl = trans_line(source, pulse_speed, ndipoles)
 
     # No absorption below this line
     hcut = 50 * co.kilo
@@ -444,19 +445,19 @@ end
 """
 Construct the transmission-line representation given a current `source` with `n` dipoles.
 """
-function trans_line(source, n=100)
+function trans_line(source, pulse_speed, n=100)
     # Min time considered
     tmin = 0.0
     
     # Max time considered
-    tmax = 1e-4
+    tmax = 3e-4
     
     # Time interval for the discretization
     dt = 1e-9
     
     pulse = CurrentPulse(t -> current(source, t), tmin, tmax, dt)
 
-    v = 2.0e8 #1.5e8
+    v = pulse_speed
 
     # No decay
     λ = 1e6
