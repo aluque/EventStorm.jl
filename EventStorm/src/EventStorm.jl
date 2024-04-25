@@ -126,21 +126,10 @@ function _main(;
                save_flash = false,
                
                # If false, returns the configuration but does not run the simulation
-               run = true,
-              )
+               run = true,               
+               )
 
-    ## 
-    ## Make sure that output folder exists
-    ##
-    if !isdir(outfolder)
-        mkpath(outfolder)
-        @info "$(outfolder) created"
-    else
-        @warn "$(outfolder) already exists and output may overwrite exisiting files."
-    end
 
-    writejl(joinpath(outfolder, name * ".jl"), _main, Base.@locals)
-    
     Polyester.reset_threads!()
 
     r1 = @SVector([0, 0, h])
@@ -264,6 +253,18 @@ function _main(;
     end
 
 
+    ## 
+    ## Make sure that output folder exists
+    ##
+    if !isdir(outfolder)
+        mkpath(outfolder)
+        @info "$(outfolder) created"
+    else
+        @warn "$(outfolder) already exists and output may overwrite exisiting files."
+    end
+
+    writejl(joinpath(outfolder, name * ".jl"), _main, Base.@locals)
+    
     ##
     ## Solve the ODEs
     ##
