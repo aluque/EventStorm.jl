@@ -122,6 +122,9 @@ function _main(;
                # If not nothing, use a different gas density file
                gas_density_fname = nothing,
                
+               # Whether to save flash data to inspect / plot / debug
+               save_flash = false,
+               
                # If false, returns the configuration but does not run the simulation
                run = true,
               )
@@ -222,7 +225,7 @@ function _main(;
     n1 = zeros(nspecies(frs), length(krange))
     
     conf = Config(;z, ngas, krange, r1, r2, source_duration, Ipeak_median, Ipeak_log_std,
-                  tl, storm_distance, storm_extension, n1, rs, frs)
+                  tl, storm_distance, storm_extension, n1, rs, frs, save_flash)
     
     ws = [Workspace(Float64, length(tl)) for _ in krange]
     
@@ -326,6 +329,9 @@ end
     
     "Number of gridpoints when integrating in time"
     time_gridpoints::Int = 256
+
+    "Save ODE solution (useful only for debugging)"
+    save_flash::Bool = false
 end
 
 """
