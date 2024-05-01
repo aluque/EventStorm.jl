@@ -457,7 +457,7 @@ function trans_line(source, pulse_speed, n=100)
     tmin = 0.0
     
     # Max time considered
-    tmax = 3e-4
+    tmax = 1e-3
     
     # Time interval for the discretization
     dt = 1e-9
