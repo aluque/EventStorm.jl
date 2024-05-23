@@ -25,6 +25,7 @@ using Printf
 using Distributions
 using Dates
 using Random
+using ProgressMeter
 
 using DocStringExtensions
 
@@ -40,6 +41,7 @@ using DipoleRadiators: FieldComponents, Propagator, image, pos, remotefield
 using Chemise
 
 const DATA_DIR = normpath(joinpath(@__DIR__, "..", "data"))
+const PROGRESS_REF = Ref{Progress}()
 
 include("softstep.jl")
 include("electrons.jl")
@@ -227,6 +229,7 @@ function _main(;
     @info "Number of flashes to simulate:" nevents
     event_times = storm_peak_time .+ storm_duration .* randn(nevents)
     sort!(event_times)
+    PROGRESS_REF[] = Progress(nevents; showspeed=true)
     
     ##
     ## Set up the flash sub-solver

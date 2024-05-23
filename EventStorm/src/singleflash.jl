@@ -10,8 +10,8 @@ function flash!(integrator)
     (;z, ngas, frs, rs, Ipeak_median, Ipeak_log_std, storm_distance, storm_extension) = conf
     n = integrator.u
 
-    @info "Simulating flash at t = " * string(integrator.t)
-    
+    next!(PROGRESS_REF[]; showvalues = [(:t, string(integrator.t))])
+        
     # Sample from distributions
     rho = sqrt((storm_extension * randn() + storm_distance)^2 + (storm_extension * randn())^2)
     Ipeak = exp(log(Ipeak_median) + randn() * Ipeak_log_std)
