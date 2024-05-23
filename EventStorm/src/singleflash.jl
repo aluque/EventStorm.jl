@@ -132,7 +132,7 @@ function self_attenuation_derivs!(du, u, p, t)
         en = norm(Er) / ngas[k1] / co.Td
         sigma = co.elementary_charge * n[electrons, k] * mun / ngas[k1]
 
-        dM[k + 1] = sigma / co.epsilon_0 / 2 - co.c * (M[k + 1] - M[k]) / dz
+        dM[k + 1] = sigma / co.epsilon_0 / 2 - co.c * costheta * (M[k + 1] - M[k]) / dz
         dn[:, k] .= Chemise.derivs(@view(n[:, k]), frs, en; x=k1)
     end    
 end
