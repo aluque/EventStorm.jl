@@ -6,12 +6,12 @@ function slow_reactions(T, fixed_dens)
     ion_ion_recombination = 6e-8 * co.centi^3 * sqrt(300 / T)
 
     # Assuming thermal eq. for these slow times
-    Te = T
-    Ti = T
+    T_e = T
+    T_i = T
     
     fix = map(((spec, v),) -> spec => j -> v[j], fixed_dens)
     
-    rs = ReactionSet([
+    rs = @kexprs ReactionSet([
         # From Kotovsky
         @withref(["Kotovsky2016", "Kotovsky2016[9]"],
                  "e + O3 -> O- + O2" => 1e-17,
@@ -26,10 +26,10 @@ function slow_reactions(T, fixed_dens)
         #          "e + O3 -> O2- + O" => 1.24e-18),
         
         "e + O2 + O2 -> O2- + O2" =>
-            (1.4e-41 * (300 / Te) * exp(-600 / T) * exp(700 * (Te - T) / Te / T)) .. "ref",
+            (1.4e-41 * (300 / T_e) * exp(-600 / T) * exp(700 * (T_e - T) / (T_e * T))) .. "ref",
         
         "e + O2 + N2 -> O2- + N2" =>
-            (1.07e-43 * (300 / Te)^2 * exp(-70 / T) * exp(1500 * (Te - T) / Te / T)) .. "ref",
+            (1.07e-43 * (300 / T_e)^2 * exp(-70 / T) * exp(1500 * (T_e - T) / (T_e * T))) .. "ref",
         
         # Negative ions and electrons
         "O- + O2 -> e + O3" => 5.0e-21 .. ["Kossyi1994", "Kossyi1994[28]", "Kossyi1994[29]"],
@@ -59,8 +59,8 @@ function slow_reactions(T, fixed_dens)
                  "OH- + O -> HO2 + e" => 2e-16),
 
         
-        "O- + O2 + N2 -> O3- + N2" => 1.10e-42 * (300 / T),
-        "O- + O2 + O2 -> O3- + O2" => 1.10e-42 * (300 / T),
+        "O- + O2 + N2 -> O3- + N2" => (1.10e-42 * (300 / T)),
+        "O- + O2 + O2 -> O3- + O2" => (1.10e-42 * (300 / T)),
         
         # Lyman-β
         "O2 + β -> e + O2+" => 0.90e-18 * co.centi^2,
@@ -69,24 +69,23 @@ function slow_reactions(T, fixed_dens)
         "NO + α -> e + NO+" => 2.02e-18 * co.centi^2,
         
         # Constant rate of e/pos-ion recombination.  Must be improved
-        # "e + N2+ -> " => 3e-13 * 300 / Te + 4e-13 * (300 / Te)^1.5 .. "Gordillo-Vazquez2016/JGR",
-        # "e + O2+ -> " => 3e-13 * 300 / Te + 4e-13 * (300 / Te)^1.5 .. "Gordillo-Vazquez2016/JGR",
-        # "e + NO+ -> " => 3e-13 * 300 / Te + 4e-13 * (300 / Te)^1.5 .. "Gordillo-Vazquez2016/JGR",
-        
+        # "e + N2+ -> " => 3e-13 * 300 / T_e + 4e-13 * (300 / T_e)^1.5 .. "Gordillo-Vazquez2016/JGR",
+        # "e + O2+ -> " => 3e-13 * 300 / T_e + 4e-13 * (300 / T_e)^1.5 .. "Gordillo-Vazquez2016/JGR",
+        # "e + NO+ -> " => 3e-13 * 300 / T_e + 4e-13 * (300 / T_e)^1.5 .. "Gordillo-Vazquez2016/JGR",
         @withref(["Kotovsky2016", "Sheehan2004", "Biondi1975", "Peterson1998"],
-                 "e + N2+ -> N(4S) + N(2D)" => 0.37 * 2.2e-13 * (300 / T)^0.2 * (Te / T)^-.39,
-                 "e + N2+ -> N(2P) + N(4S)" => 0.11 * 2.2e-13 * (300 / T)^0.2 * (Te / T)^-.39,
-                 "e + N2+ -> N(2D) + N(2D)" => 0.52 * 2.2e-13 * (300 / T)^0.2 * (Te / T)^-.39),
+                 "e + N2+ -> N(4S) + N(2D)" => 0.37 * 2.2e-13 * (300 / T)^0.2 * (T_e / T)^-.39,
+                 "e + N2+ -> N(2P) + N(4S)" => 0.11 * 2.2e-13 * (300 / T)^0.2 * (T_e / T)^-.39,
+                 "e + N2+ -> N(2D) + N(2D)" => 0.52 * 2.2e-13 * (300 / T)^0.2 * (T_e / T)^-.39),
         
         @withref(["Kotovsky2016", "Sheehan2004", "Biondi1975", "Hellberg2003"],
-                 "e + NO+ -> N(4S) + O(3P)" => 0.05 * 3.5e-13 * (300 / T) * (Te / T)^-.69,
-                 "e + NO+ -> N(4S) + O(3P)" => 0.95 * 3.5e-13 * (300 / T) * (Te / T)^-.69),
+                 "e + NO+ -> N(4S) + O(3P)" => 0.05 * 3.5e-13 * (300 / T) * (T_e / T)^-.69,
+                 "e + NO+ -> N(4S) + O(3P)" => 0.95 * 3.5e-13 * (300 / T) * (T_e / T)^-.69),
         
         @withref(["Kotovsky2016", "Kotovsky2016[22]"],
-                 "e + O4+ -> " => 4.2e-12 * (Te / T)^-0.48),
+                 "e + O4+ -> " => 4.2e-12 * (T_e / T)^-0.48),
 
         @withref(["Kotovsky2016", "Kotovsky2016[18]", "Kotovsky2016[19]"],
-                 "e + O2+ -> " => 1.95e-13 * (300 / T)^0.7 * (Te / T)^-0.7),
+                 "e + O2+ -> " => 1.95e-13 * (300 / T)^0.7 * (T_e / T)^-0.7),
 
         @withref(["Kossyi1994"],
                  "N+ + O2 -> O2+ + N" => 2.8e-16,
@@ -103,7 +102,6 @@ function slow_reactions(T, fixed_dens)
                  "O2+ + N2 -> NO+ + NO" => 1e-23,
                  "O4+ + O2 -> O2+ + O2 + O2" => 3.3e-12 * (300 / T)^4 * exp(-5030 / T),
                  "O4+ + O -> O2+ + O3" => 3e-16),
-                 
                  
         # Positive ion chemistry
         # 3-body processes; slow for upper-atmosphere

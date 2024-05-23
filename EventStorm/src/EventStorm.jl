@@ -52,7 +52,7 @@ include("inputs.jl")
 
 function _main(;
                # Place-holders filled by wrap_input in inputs.jl
-               _input=nothing,
+               _input="",
                _date=nothing,
                _git_commit=nothing,
                _git_dirty=nothing,
@@ -251,7 +251,6 @@ function _main(;
     if !run
         return NamedTuple(Base.@locals)
     end
-
 
     ## 
     ## Make sure that output folder exists
