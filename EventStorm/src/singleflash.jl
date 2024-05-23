@@ -127,6 +127,9 @@ function self_attenuation_derivs!(du, u, p, t)
         costheta = sum(tli -> cosinc(pos(tli), r), tl) ./ length(tl)
         Eq, Ei, Er = free_electric_field(fieldcomponents, r, t, Ipeak, tl, props)
 
+        Er *= exp(-M[k + 1])
+
+        en = norm(Er) / ngas[k1] / co.Td
         sigma = co.elementary_charge * n[electrons, k] * mun / ngas[k1]
 
         dM[k + 1] = sigma / co.epsilon_0 / 2 - co.c * (M[k + 1] - M[k]) / dz
@@ -142,7 +145,7 @@ in `ef`. If `reduced==true` computes the reduced electric field in Td.
 This is only used for debugging/plotting; normally the field is computed internally and discarded
 each time step.
 """
-function compute_field!(ef, u, p, t, reduced=false)
+function compute_field!(ef, u, p, t, reduced=false, free=false)
     (;rho, Ipeak, conf, ws) = p
     (;z, ngas, krange, tl) = conf
 
@@ -161,7 +164,12 @@ function compute_field!(ef, u, p, t, reduced=false)
         costheta = sum(tli -> cosinc(pos(tli), r), tl) / length(tl)
 
         Eq, Ei, Er = free_electric_field(fieldscomponents, r, t, Ipeak, tl, props)
-        
+        if !free
+            Er *= exp(-M[k + 1])
+        end
+
+        ef[k] = E
+
         if reduced
             ef[k] = ef[k] / ngas[k1] / co.Td
         end
