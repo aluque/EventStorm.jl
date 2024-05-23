@@ -145,7 +145,7 @@ in `ef`. If `reduced==true` computes the reduced electric field in Td.
 This is only used for debugging/plotting; normally the field is computed internally and discarded
 each time step.
 """
-function compute_field!(ef, u, p, t, reduced=false, free=false)
+function compute_field!(ef, u, p, t; reduced=false, free=false)
     (;rho, Ipeak, conf, ws) = p
     (;z, ngas, krange, tl) = conf
 
@@ -163,12 +163,12 @@ function compute_field!(ef, u, p, t, reduced=false, free=false)
         # angle. Here we use the angle with the first dipole
         costheta = sum(tli -> cosinc(pos(tli), r), tl) / length(tl)
 
-        Eq, Ei, Er = free_electric_field(fieldscomponents, r, t, Ipeak, tl, props)
+        Eq, Ei, Er = free_electric_field(fieldcomponents, r, t, Ipeak, tl, props)
         if !free
             Er *= exp(-M[k + 1])
         end
 
-        ef[k] = E
+        ef[k] = Er
 
         if reduced
             ef[k] = ef[k] / ngas[k1] / co.Td
