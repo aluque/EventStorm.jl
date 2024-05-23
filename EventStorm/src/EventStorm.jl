@@ -411,21 +411,27 @@ end
 
 """
 Compute the free-space electric field at `z[i]`, `ρ` produced by a peak current
-`Ipeak` when the log-attenuation is `latt`. `props` contains the propagators.
+`Ipeak`. `props` contains the propagators. `f` usually is the function to extract the
+field from the output ff `DipoleRadiators`: `total` for the full field, `induction`, `radiation` or
+`static` (any other function would work though).
 """
-function free_electric_field(r, t, Ipeak, tl, props)    
-    field = zero(SVector{3, typeof(t)})
-    
-    for j in eachindex(tl)
-        field += total(remotefield(tl[j], props[j], t))
-    end
+function free_electric_field(f::Function, r, t, Ipeak, tl, props)
+    field = sum(j -> f(remotefield(tl[j], props[j], t)), eachindex(tl))
 
     return field * Ipeak
 end
 
+nonradiation(rf) = induction(rf) + static(rf)
+fieldcomponents(rf::DipoleRadiators.FieldComponents) = SA[rf.static, rf.induction, rf.radiation]
+
+"""
+Total electric field
+"""
+free_electric_field(r, t, Ipeak, tl, props) = free_electric_field(total, r, t, Ipeak, tl, props)
 
 
 """
+
 Compute the propagators of the electric field from each dipole in the transmission line `tl` to the 
 point `r`.
 """

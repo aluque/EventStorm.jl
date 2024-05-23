@@ -125,8 +125,7 @@ function self_attenuation_derivs!(du, u, p, t)
         # Think about this: we have to assume a planar wave so we have to select the 'best' incidence
         # angle. Here we average the incidence cosine.        
         costheta = sum(tli -> cosinc(pos(tli), r), tl) ./ length(tl)
-        en = (exp(-M[k + 1] / costheta) *
-            norm(free_electric_field(r, t, Ipeak, tl, props)) / ngas[k1] / co.Td)
+        Eq, Ei, Er = free_electric_field(fieldcomponents, r, t, Ipeak, tl, props)
 
         sigma = co.elementary_charge * n[electrons, k] * mun / ngas[k1]
 
@@ -161,7 +160,7 @@ function compute_field!(ef, u, p, t, reduced=false)
         # angle. Here we use the angle with the first dipole
         costheta = sum(tli -> cosinc(pos(tli), r), tl) / length(tl)
 
-        ef[k] = (exp(-M[k + 1] / costheta) * norm(free_electric_field(r, t, Ipeak, tl, props)))
+        Eq, Ei, Er = free_electric_field(fieldscomponents, r, t, Ipeak, tl, props)
         
         if reduced
             ef[k] = ef[k] / ngas[k1] / co.Td
