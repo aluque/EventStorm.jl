@@ -2,7 +2,7 @@
 
 function slow_reactions(T, fixed_dens)
     # From Kotovsky & Moore 2016
-    F = 1.74e-18 + 1.93e-17 * sind(35)^4
+    F = 1.74e-18 + 1.93e-17 * sind(-7)^4
     ion_ion_recombination = 6e-8 * co.centi^3 * sqrt(300 / T)
 
     # Assuming thermal eq. for these slow times
