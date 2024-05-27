@@ -291,7 +291,8 @@ function _main(;
                                         map(s -> s => n[idx(rs, s), :], species(rs))...)))
     end
     CSV.write(joinpath(outfolder, "times.csv"), DataFrame(t=sol.t))
-        
+
+    @info "Done"
     return NamedTuple(Base.@locals)
 end
 
