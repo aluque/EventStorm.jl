@@ -57,11 +57,14 @@ function plot_slice(folder, zslice, s::Symbol=:e; kw...)
     times = CSV.read(joinpath(folder, "times.csv"), DataFrame)
     z = nothing
     list = map(eachindex(times.t)) do i
-        fname = joinpath(folder, @sprintf("n-%04d.csv", i))
+        # The conversion to Int is because CSV sometimes returns ChainedVectors for long columns.
+        # The indices to the ChainedVector are not integeres but can be converted into them.
+        fname = joinpath(folder, @sprintf("n-%04d.csv", convert(Int, i)))
         df = CSV.read(fname, DataFrame)
         z = isnothing(z) ? df.z : z
         return df[!, Symbol(s)]
     end
+
     iz = searchsortedfirst(z, zslice)
     n = [item[iz] for item in list]
     plt.plot(times.t, n; label=string(s), kw...)
