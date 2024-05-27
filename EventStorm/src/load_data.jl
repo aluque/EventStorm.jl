@@ -152,6 +152,39 @@ end
 load_nrlmsis(fname::String) = load_nrlmsis(Float64, fname)
 
 """
+Load IRI profiles for electron density.
+"""
+function load_iri(T::Type, fname::String)
+    local df
+    open(fname) do fp
+        while strip(readline(fp)) != "-"
+        end
+        readline(fp)
+        df = CSV.read(fp, delim=' ', ignorerepeated=true, DataFrame)
+    end
+    z1::Vector{T} = df[!, "km"] .* co.kilo
+    n_ne::Vector{T} = df[!, "Ne/cm-3"] 
+
+    # Remove the -1's where electron density is too small.  
+    n_ne .= max.(n_ne, 1e-5 * minimum(filter(>(0), n_ne))) .* co.centi^-3
+    @show n_ne
+    z = approxrange(z1)
+    
+    interp1 = interpolate(log.(n_ne), BSpline(Cubic(Line(OnGrid()))))
+    interp = Interpolations.scale(interp1, z)
+
+    wrap = let interp=interp
+        z -> exp(interp(z))
+    end
+
+    return wrap
+end
+
+load_iri(fname::String) = load_iri(Float64, fname)
+
+
+
+"""
 Cumulative integral of `y` evaluated at `x` assuming that between gridpoints `log(y)` is linear.
 """ 
 function cumlogint(x, y)

@@ -124,6 +124,9 @@ function _main(;
                # If not nothing, use a different gas density file
                gas_density_fname = nothing,
                
+               # If not nothing use an iri profile for electron density
+               iri_electron_density_fname = nothing,
+               
                # Whether to save flash data to inspect / plot / debug
                save_flash = false,
                
@@ -155,8 +158,13 @@ function _main(;
     gas_profiles = load_gas_profiles(joinpath(DATA_DIR, "US_Std_1976.dat"))
     waccm_profiles = load_waccm(joinpath(DATA_DIR, "waccm_fg_l38.dat"))
     cr_profile = load_cr_profile(joinpath(DATA_DIR, "Thomas1974_Production.dat"))    
-    electron_density = LogInterpolatedElectronDensity(joinpath(DATA_DIR, "earth", "electrons.dat"))
     nrlmsis = load_nrlmsis(joinpath(DATA_DIR, "nrlmsis2.dat"))
+
+    if isnothing(iri_electron_density_fname)
+        electron_density = LogInterpolatedElectronDensity(joinpath(DATA_DIR, "earth", "electrons.dat"))
+    else
+        electron_density = load_iri(iri_electron_density_fname)
+    end
     
     ne = electron_density.(z)
     q = cr_profile.(z)
