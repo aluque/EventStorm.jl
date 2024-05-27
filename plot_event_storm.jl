@@ -16,18 +16,23 @@ using CSV
 using DataFrames
 using PyPlot
 using Printf
+using ColorSchemes
+using Colors
 
 function main()
     
     return NamedTuple(Base.@locals)
 end
 
-function plot_profiles(folder, s=:e; kw...)
+function plot_profiles(folder, s=:e, scheme = ColorSchemes.isoluminant_cm_70_c39_n256; kw...)
     times = CSV.read(joinpath(folder, "times.csv"), DataFrame)
+    tnorm = times.t ./ maximum(times.t)
     for i in eachindex(times.t)
         fname = joinpath(folder, @sprintf("n-%04d.csv", i))
         df = CSV.read(fname, DataFrame)
-        plt.plot(df[!, Symbol(s)], df.z; kw...)
+        rgb = get(scheme, tnorm[i])
+        color = (red(rgb), green(rgb), blue(rgb))
+        plt.plot(df[!, Symbol(s)], df.z; color, kw...)
     end
 end
 
