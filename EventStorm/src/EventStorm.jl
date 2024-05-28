@@ -106,6 +106,9 @@ function _main(;
                
                # Final time of the simulation
                final_time = storm_peak_time + 5 * storm_duration,
+
+               # Starting time of the simulation
+               start_time = 0.0,
                
                # Air composition
                comp=Dict("N2" => 0.8, "O2" => 0.2),
@@ -249,9 +252,15 @@ function _main(;
     PROGRESS_REF[] = Progress(nevents; showspeed=true)
     if final_time < last(event_times)
         final_time = last(event_times) + 60.0
-        @warn "final_time was adapted to include all flashes"
+        @warn "final_time was adapted to include all flashes" final_time
     end
-        
+
+    start_time = 0.0
+    if start_time > first(event_times)
+        start_time = first(event_times)
+        @warn "start_time was adapted to include all flashes" start_time
+    end
+    
     ##
     ## Set up the flash sub-solver
     ##
@@ -269,7 +278,7 @@ function _main(;
 
     cb = DiffEqCallbacks.PresetTimeCallback(event_times, flash!, save_positions=(false, false))
     
-    tspan = (0.0, final_time)    
+    tspan = (start_time, final_time)    
     prob = ODEProblem(derivs!, n0, tspan, (;conf, ws, flash_integrator))
     
     if !run
