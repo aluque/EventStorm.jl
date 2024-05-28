@@ -26,6 +26,7 @@ using Distributions
 using Dates
 using Random
 using ProgressMeter
+using HDF5
 
 using DocStringExtensions
 
@@ -113,6 +114,12 @@ function _main(;
                outfolder = joinpath(splitdir(_input)[1], name,
                                     String(rand('A':'Z', 3)) * "-" * Dates.format(now(), "yyyymmdd-HHMMss")),
 
+               # Save as CSV files
+               csv_output= false,
+
+               # Save as hdf5
+               hdf5_output = true,
+               
                random_seed = rand(UInt),
                
                # Time between outputs
@@ -284,14 +291,27 @@ function _main(;
     ##
     ## Write output
     ##
-    for (i, n) in enumerate(sol.u)
-        fname = joinpath(outfolder, @sprintf("n-%04d.csv", i))
-        
-        CSV.write(fname, DataFrame(Dict(:z => z[krange],
-                                        map(s -> s => n[idx(rs, s), :], species(rs))...)))
+    if csv_output
+        for (i, n) in enumerate(sol.u)
+            fname = joinpath(outfolder, @sprintf("n-%04d.csv", i))
+            
+            CSV.write(fname, DataFrame(Dict(:z => z[krange],
+                                            map(s -> s => n[idx(rs, s), :], species(rs))...)))
+        end
+        CSV.write(joinpath(outfolder, "times.csv"), DataFrame(t=sol.t))
     end
-    CSV.write(joinpath(outfolder, "times.csv"), DataFrame(t=sol.t))
 
+    if hdf5_output
+        specs = species(rs)
+        fname = joinpath(outfolder, "output.hdf5")
+        h5open(fname, "w") do fp
+            fp["times"] = sol.t
+            fp["species"] = collect(map(string, specs))
+            fp["z"] = collect(z[krange])
+            fp["n"] = cat(sol.u..., dims=3)
+        end        
+    end
+    
     @info "Done"
     return NamedTuple(Base.@locals)
 end
