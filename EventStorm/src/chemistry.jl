@@ -34,16 +34,16 @@ function slow_reactions(T, fixed_dens)
         # Negative ions and electrons
         "O- + O2 -> e + O3" => 5.0e-21 .. ["Kossyi1994", "Kossyi1994[28]", "Kossyi1994[29]"],
         "O- + O -> e + O2" => 5.0e-16 .. ["Kossyi1994", "Kossyi1994[36]"],
+        "O- + O3 -> O3- + O" => 5.30e-16 .. ["Kossyi1994", "Kossyi1994[20]", "Kossyi1994[25]"],
                 
         "O2- + O -> e + O3" => 3.3e-16 .. ["Kotovsky2016", "Kotovsky2016[11]"],        
-
-        "O3- + O -> O2 + O2 + e" => 3e-16 .. ["Kossyi1994", "Kossyi1994[37]"],
         
         "O2- + O -> O- + O2" => 3.30e-16 .. ["Kossyi1994", "Kossyi1994[25]", "Kossyi1994[30]"],
         "O2- + O3 -> O3- + O2" => 4e-16 .. ["Kossyi1994", "Kossyi1994[20]",
                                             "Kossyi1994[25]", "Kossyi1994[29]", "Kossyi1994[30]"],
+        "O3- + O -> O2 + O2 + e" => 3e-16 .. ["Kossyi1994", "Kossyi1994[37]"],
+        "O3- + O -> O2- + O2" => 2.5e-16 .. ["Kotovsky2016", "Kotovsky2016[13]"],
         
-        "O- + O3 -> O3- + O" => 5.30e-16 .. ["Kossyi1994", "Kossyi1994[20]", "Kossyi1994[25]"],
         
 
         # CO2- and H2O- based reactions
