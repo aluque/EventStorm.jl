@@ -9,12 +9,15 @@ function flash!(integrator)
     (;conf, ws, flash_integrator) = integrator.p
     (;z, ngas, frs, rs, Ipeak_median, Ipeak_log_std, storm_distance, storm_extension) = conf
     n = integrator.u
-
+    
     next!(PROGRESS_REF[]; showvalues = [(:t, string(integrator.t))])
         
     # Sample from distributions
     rho = sqrt((storm_extension * randn() + storm_distance)^2 + (storm_extension * randn())^2)
     Ipeak = exp(log(Ipeak_median) + randn() * Ipeak_log_std)
+
+    push!(IPEAK_SAMPLES, Ipeak)
+    push!(RHO_SAMPLES, rho)
     
     singleflash_run!(flash_integrator, n, rho, Ipeak, conf, ws)
     n1 = flash_integrator.u.x[1]

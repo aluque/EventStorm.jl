@@ -42,6 +42,8 @@ using DipoleRadiators: FieldComponents, Propagator, image, pos, remotefield
 using Chemise
 
 const DATA_DIR = normpath(joinpath(@__DIR__, "..", "data"))
+const IPEAK_SAMPLES = Vector{Float64}()
+const RHO_SAMPLES = Vector{Float64}()
 const PROGRESS_REF = Ref{Progress}()
 
 include("softstep.jl")
@@ -103,7 +105,7 @@ function _main(;
                storm_distance = 100 * co.kilo,
                
                # Final time of the simulation
-               final_time = storm_peak_time + 3 * storm_duration,
+               final_time = storm_peak_time + 5 * storm_duration,
                
                # Air composition
                comp=Dict("N2" => 0.8, "O2" => 0.2),
@@ -245,7 +247,11 @@ function _main(;
     event_times = storm_peak_time .+ storm_duration .* randn(nevents)
     sort!(event_times)
     PROGRESS_REF[] = Progress(nevents; showspeed=true)
-    
+    if final_time < last(event_times)
+        final_time = last(event_times) + 60.0
+        @warn "final_time was adapted to include all flashes"
+    end
+        
     ##
     ## Set up the flash sub-solver
     ##
@@ -263,7 +269,7 @@ function _main(;
 
     cb = DiffEqCallbacks.PresetTimeCallback(event_times, flash!, save_positions=(false, false))
     
-    tspan = (0.0, final_time)
+    tspan = (0.0, final_time)    
     prob = ODEProblem(derivs!, n0, tspan, (;conf, ws, flash_integrator))
     
     if !run
@@ -299,6 +305,9 @@ function _main(;
                                             map(s -> s => n[idx(rs, s), :], species(rs))...)))
         end
         CSV.write(joinpath(outfolder, "times.csv"), DataFrame(t=sol.t))
+        CSV.write(joinpath(outfolder, "flashes.csv"),
+                  DataFrame(t=event_times, ipeak=IPEAK_SAMPLES, rho=RHO_SAMPLES))
+        
     end
 
     if hdf5_output
@@ -309,6 +318,11 @@ function _main(;
             fp["species"] = collect(map(string, specs))
             fp["z"] = collect(z[krange])
             fp["n"] = cat(sol.u..., dims=3)
+
+            g = create_group(fp, "flashes")
+            g["times"] = event_times
+            g["ipeak"] = IPEAK_SAMPLES
+            g["rho"] = RHO_SAMPLES
         end        
     end
     
