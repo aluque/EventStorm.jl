@@ -167,7 +167,6 @@ function load_iri(T::Type, fname::String)
 
     # Remove the -1's where electron density is too small.  
     n_ne .= max.(n_ne, 1e-5 * minimum(filter(>(0), n_ne))) .* co.centi^-3
-    @show n_ne
     z = approxrange(z1)
     
     interp1 = interpolate(log.(n_ne), BSpline(Cubic(Line(OnGrid()))))
