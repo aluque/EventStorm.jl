@@ -102,7 +102,16 @@ function slow_reactions(T, fixed_dens)
                  "O2+ + N2 -> NO+ + NO" => 1e-23,
                  "O4+ + O2 -> O2+ + O2 + O2" => 3.3e-12 * (300 / T)^4 * exp(-5030 / T),
                  "O4+ + O -> O2+ + O3" => 3e-16),
-                 
+
+        # Production of O4+
+        "O2+ + O2 + M -> O4+ + M" => 2.6e-42 * (300 / T)^3.2 .. ["Kotovsky2016", "Brasseur1986"],
+
+        # Hydration of positive ions and recombination with e-
+        "O4+ + H2O -> Y+ + O2" => 1.5e-15 .. ["Kotovsky2016", "Brasseur1986"],
+        "NO+ + M + M -> Y+ + M" => (exp(-45.17 + 0.11 * T - 4.84e-4 * T^2)
+                                      .. ["Kotovsky2016", "Kotovsky2016[17]"]),
+        "Y+ + e -> " => 3e-12 .. "Reid1977",
+        
         # Positive ion chemistry
         # 3-body processes; slow for upper-atmosphere
         # "N2+ + N2 + N2 => N4+ + N2", 5e-41                       .. ["Kossyi1994", "Kossyi1994[20]"],
