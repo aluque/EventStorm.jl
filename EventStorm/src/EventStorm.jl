@@ -87,7 +87,8 @@ function _main(;
                # log-normal distribution for the peak currents from Ingrid's paper (see fit_ingrid.jl)
                Ipeak_median = 20.36 * co.kilo,
                Ipeak_log_std = 1.14,
-                              
+               Ipeak_cutoff = Inf,
+
                # boundaries for integration
                hmin = 70 * co.kilo,
                hmax = 95 * co.kilo,
@@ -235,7 +236,8 @@ function _main(;
     
     n1 = zeros(nspecies(frs), length(krange))
     
-    conf = Config(;z, ngas, krange, r1, r2, source_duration, Ipeak_median, Ipeak_log_std,
+    conf = Config(;z, ngas, krange, r1, r2, source_duration,
+                  Ipeak_median, Ipeak_log_std, Ipeak_cutoff,
                   tl, storm_distance, storm_extension, n1, rs, frs, save_flash)
     
     ws = [Workspace(Float64, length(tl)) for _ in krange]
@@ -369,6 +371,9 @@ end
 
     "log-standard deviation of the current peak distribution"
     Ipeak_log_std::T
+
+    "Cutoff of peak currents."
+    Ipeak_cutoff::T
 
     "Transmission line dipoles"
     tl::Vector{Dip}

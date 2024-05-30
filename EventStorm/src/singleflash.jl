@@ -7,15 +7,21 @@ Call-back for the slow-system solver, whenever a flash is encountered.
 """
 function flash!(integrator)
     (;conf, ws, flash_integrator) = integrator.p
-    (;z, ngas, frs, rs, Ipeak_median, Ipeak_log_std, storm_distance, storm_extension) = conf
+    (;z, ngas, frs, rs, Ipeak_median, Ipeak_log_std, Ipeak_cutoff, storm_distance, storm_extension) = conf
     n = integrator.u
     
     next!(PROGRESS_REF[]; showvalues = [(:t, string(integrator.t))])
         
     # Sample from distributions
     rho = sqrt((storm_extension * randn() + storm_distance)^2 + (storm_extension * randn())^2)
+    
     Ipeak = exp(log(Ipeak_median) + randn() * Ipeak_log_std)
-
+    if isfinite(Ipeak_cutoff)
+        while Ipeak > Ipeak_cutoff
+            Ipeak = exp(log(Ipeak_median) + randn() * Ipeak_log_std)
+        end
+    end
+    
     push!(IPEAK_SAMPLES, Ipeak)
     push!(RHO_SAMPLES, rho)
     
