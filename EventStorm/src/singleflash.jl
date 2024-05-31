@@ -58,7 +58,7 @@ function singleflash_setup(conf, ws)
     end
 
     prob = ODEProblem{true}(self_attenuation_derivs!, u0, (0, 1e-3), p)
-    integrator = init(prob, Tsit5(), reltol=1e-4, dtmax=5e-5, dt=1e-6,
+    integrator = init(prob, Tsit5(), reltol=1e-5, dtmax=5e-5, dt=1e-6,
                       dense=false, save_everystep=save_flash, save_start=save_flash,
                       save_end=save_flash,
                       initialize_save=save_flash)
