@@ -58,7 +58,7 @@ function singleflash_setup(conf, ws)
     end
 
     prob = ODEProblem{true}(self_attenuation_derivs!, u0, (0, 1e-3), p)
-    integrator = init(prob, Tsit5(), reltol=1e-4,
+    integrator = init(prob, Tsit5(), reltol=1e-4, dtmax=5e-5, dt=1e-6,
                       dense=false, save_everystep=save_flash, save_start=save_flash,
                       save_end=save_flash,
                       initialize_save=save_flash)
@@ -140,8 +140,9 @@ function self_attenuation_derivs!(du, u, p, t)
 
         en = norm(Er) / ngas[k1] / co.Td
         sigma = co.elementary_charge * n[electrons, k] * mun / ngas[k1]
-
-        dM[k + 1] = sigma / co.epsilon_0 / 2 - co.c * costheta * (M[k + 1] - M[k]) / dz
+        @assert sigma >= 0
+        
+        dM[k + 1] = sigma / co.epsilon_0 / 2 - co.c * costheta * (M[k + 1] - M[k]) / dz            
         dn[:, k] .= Chemise.derivs(@view(n[:, k]), frs, en; x=k1)
     end    
 end
