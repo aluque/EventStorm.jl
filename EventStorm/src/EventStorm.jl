@@ -62,7 +62,7 @@ function _main(;
                _git_commit=nothing,
                _git_dirty=nothing,
                
-               T = 200,
+               T = 200.0,
                Te = T,
                
                h=0 * co.kilo,
@@ -224,7 +224,7 @@ function _main(;
     rs = slow_reactions(T, fixed_dens)
     @info "Number of SLOW reactions: $(length(rs.reactions))"
     
-    frs = fast_reactions(comp; ngas)
+    frs = fast_reactions(T, comp; ngas)
     @info "Number of FAST reactions: $(length(frs.reactions))"
 
     ##

@@ -141,29 +141,108 @@ function cartesian_product(spec1, spec2, res, rate)
 end
 
 
-function fast_reactions(comp; ngas, swarmfile=joinpath(DATA_DIR, "swarm/LxCat_Phelps_20230914.txt"))
+function fast_reactions(T, comp; ngas, swarmfile=joinpath(DATA_DIR, "swarm/LxCat_Phelps_20230914.txt"))
     lx = LxCatSwarmData.load(swarmfile)
     tbl = loadtable(eachcol(lx.data), xcol=:en)
 
+    rec = loadtable(eachcol(CSV.read(joinpath(DATA_DIR, "swarm/rec_electron.dat"), DataFrame,
+                                     header=[:en, :k])), xcol=:en)
+    
     compN2 = comp["N2"]
     compO2 = comp["O2"]
+    ion_ion_recombination = 1e-7 * co.centi^3
+    
+    frs = ReactionSet([
+        "e + N2 -> 2 * e + N2+" => RateLookup(tbl, :C25),
+        "e + N2 -> 2 * e + N2+" => RateLookup(tbl, :C26),
+        "e + O2 -> 2 * e + O2+" => RateLookup(tbl, :C43),
+        "e + O2 -> O + O-" => RateLookup(tbl, :C28),
+        
+        # We could have used O2 instead of O2M and then dividing the rate by 1e6
+        "e + O2 + O2M -> O2- + O2M" => RateLookup(tbl, :C27),
+        
+        @withref(["Pancheshnyi2013/JPhD"],
+                 "O2- + M -> e + O2 + M" => PancheshnyiFitEN(1.24e-11 * co.centi^3, 179.0, 8.8),
+                 "O- + O2 -> O2- + O" => PancheshnyiFitEN(6.96e-11 * co.centi^3, 198.0, 5.6),
+                 "O2 + O- + M -> O3- + M" => PancheshnyiFitEN2(1.1e-30 * co.centi^6, 65.0)),
+        
+        @withref(["Schuman2023/PhysChem"],
+                 "N2 + O- -> e + N2O" => ModArrhenius(;k0=3.98e-17, T0=5097.0, d=-1.36, T),
+                 "N2(v1) + O- -> e + N2O" => ModArrhenius(;k0=9.04e-18, T0=674.0, d=-0.85, T),
+                 "N2(v2) + O- -> e + N2O" => ModArrhenius(;k0=2.74e-17, T0=186.0, d=-1.10, T)),
+        
+        @withref(["Lawton1978/JChPh", "Phelps1985/PhRvA", "Hagelaar2005/PSST"],
+                 # Resonant v1
+                 "e + N2 -> e + N2(v1)" => RateLookup(tbl, :C3),
+                 "e + N2 -> e + N2(v1)" => RateLookup(tbl, :C4),
+                 "e + N2 -> e + N2(v2)" => RateLookup(tbl, :C5),
+                 "e + N2 -> e + N2(v3)" => RateLookup(tbl, :C6)),
+        
+        @withref(["Aleksandrov1999/PSST"],
+                 "N2+ + N2 + M -> N4+ + M" => TemperaturePower(;k0=5e-29 * co.centi^6, power=2, T),
+                 "N4+ + O2 -> 2 * N2 + O2+" => 2.5e-10 * co.centi^3,
+                 "O2+ + O2 + M -> O4+ + M" => TemperaturePower(;k0=2.4e-30 * co.centi^6, power=3, T)),
 
-    frs = ReactionSet(["e + N2 -> 2 * e + N2+" => RateLookup(tbl, :C25),
-                       "e + N2 -> 2 * e + N2+" => RateLookup(tbl, :C26),
-                       "e + O2 -> 2 * e + O2+" => RateLookup(tbl, :C43),
-                       "e + O2 -> O + O-" => RateLookup(tbl, :C28),
-                       "e + O2 + M -> O2- + M" => RateLookup(tbl, :C27),
-
-                       # Instantaneous emission
-                       "e + N2 -> e + SPS" => RateLookup(tbl, :C10)
-                       ];
-                      fix = [:N2 => j -> compN2 * ngas[j],
-                             :O2 => j -> compO2 * ngas[j],
-                             
-                             # The 1e6 comes from Bolsig+'s normalization of 3-body
-                             :M => j -> ngas[j] / 1e6])
-
+        "e + O4+ -> O2 + O2" => (RateLookup(rec, :k) .. "Kossyi1992/PSST"),
+        
+        cartesian_product(["O-", "O2-"],
+                          ["N2+", "N4+", "O2+", "O4+"], "",
+                          ion_ion_recombination .. ["Kossyi1992/PSST"])...,
+        
+        # Instantaneous emission
+        "e + N2 -> e + SPS" => RateLookup(tbl, :C10)
+    ]; fix = [:N2 => j -> compN2 * ngas[j],
+              :O2 => j -> compO2 * ngas[j],
+              
+              :M => j -> ngas[j],
+              
+              # The 1e6 comes from Bolsig+'s normalization of 3-body
+              :O2M => j -> compO2 * ngas[j] / 1e6])
+    
 end
+
+
+@kwdef struct TemperaturePower{TY,P}
+    k0::TY
+    power::P
+    T::TY
+    T0::TY = 300.0
+end
+
+Chemise.evalk(p::TemperaturePower, en) = p.k0 * (p.T0 / p.T)^p.power
+
+@kwdef struct PancheshnyiFitEN{T}
+    k0::T
+    a::T
+    b::T
+end
+
+Chemise.evalk(p::PancheshnyiFitEN, en) = p.k0 * exp(-(p.a / (p.b + en))^2)
+
+
+@kwdef struct PancheshnyiFitEN2{T}
+    k0::T
+    a::T
+end
+
+Chemise.evalk(p::PancheshnyiFitEN2, en) = p.k0 * exp(-(en / p.a)^2)
+
+
+@kwdef struct ModArrhenius{TY}
+    k0::TY
+    T0::TY
+    d::TY
+    T::TY
+    mgas::TY = 28.02 * co.gram / co.Avogadro
+    K0::TY = 4.5 * co.centi^2
+end
+
+function Chemise.evalk(p::ModArrhenius, en)
+    vd = co.nair * p.K0 * en * co.Td
+    Teff = p.T + p.mgas * vd^2 / (3 * co.k)
+    k = p.k0 * (Teff / 300)^p.d * exp(-p.T0 / Teff)
+end
+
 
 
 # The electron transport and ionization parameters are defined for a given
