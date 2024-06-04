@@ -140,9 +140,15 @@ function _main(;
                # If not nothing use an iri profile for electron density
                iri_electron_density_fname = nothing,
                
+               # Time for the fast reactions after the end of the source
+               extra_time = 50e-3,
+               
                # Whether to save flash data to inspect / plot / debug
                save_flash = false,
                
+               #Perform a baseline run that ignores the fast reactions
+               baseline_run = false,
+
                # If false, returns the configuration but does not run the simulation
                run = true,               
                )
@@ -238,7 +244,8 @@ function _main(;
     
     conf = Config(;z, ngas, krange, r1, r2, source_duration,
                   Ipeak_median, Ipeak_log_std, Ipeak_cutoff,
-                  tl, storm_distance, storm_extension, n1, rs, frs, save_flash)
+                  tl, storm_distance, storm_extension, n1, rs, frs, save_flash, baseline_run,
+                  extra_time)
     
     ws = [Workspace(Float64, length(tl)) for _ in krange]
     
@@ -387,11 +394,17 @@ end
     "Fast reaction set"
     frs::FRS
     
+    "Time in the fast system after the end of the source"
+    extra_time = 50e-3
+    
     "Number of gridpoints when integrating in time"
     time_gridpoints::Int = 256
 
     "Save ODE solution (useful only for debugging)"
     save_flash::Bool = false
+
+    "Perform a baseline run that ignores the fast reactions"
+    baseline_run::Bool = true
 end
 
 """
