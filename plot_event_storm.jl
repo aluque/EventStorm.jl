@@ -36,9 +36,36 @@ function plot_profiles(folder, s=:e, scheme = ColorSchemes.isoluminant_cm_70_c39
     end
 end
 
-
-function pcolor_profiles(folder, s=:e; log=true, cmap="gnuplot2", kw...)
+function plot_diff_profiles(folder, s=:e, scheme = ColorSchemes.isoluminant_cm_70_c39_n256; kw...)
     (times, z, n) = loadsim(folder)
+    tnorm = times.t ./ maximum(times.t)
+    df1 = nothing
+    
+    for i in eachindex(times.t)
+        df = n[i]
+        if isnothing(df1)
+            df1 = df
+            continue
+        end
+        for col in names(df)
+            df1[!, col] .= df[!, col] .- df1[!, col]
+        end
+
+        rgb = get(scheme, tnorm[i])
+        color = (red(rgb), green(rgb), blue(rgb))
+        plt.plot(df1[!, Symbol(s)], df.z; color, kw...)
+        df1 = df
+    end
+end
+
+
+function pcolor_profiles(folder, s=:e; log=true, cmap="gnuplot2", baseline=nothing, kw...)
+    (times, z, n) = loadsim(folder)
+    if !isnothing(baseline)
+        (btimes, bz, bn) = loadsim(baseline)
+        subtract_baseline!(n, bn)
+    end
+    
     list = map(eachindex(times.t)) do i
         df = n[i]
         return df[!, Symbol(s)]
@@ -51,8 +78,73 @@ function pcolor_profiles(folder, s=:e; log=true, cmap="gnuplot2", kw...)
 end
 
 
-function plot_slice(folder, zslice, s::Symbol=:e; kw...)
+function pcolor_diff_profiles(folder, s=:e; log=true, cmap="Reds", baseline=nothing, kw...)
     (times, z, n) = loadsim(folder)
+    xprev = nothing
+
+    if !isnothing(baseline)
+        (btimes, bz, bn) = loadsim(baseline)
+        subtract_baseline!(n, bn)
+    end
+    
+    list = map(eachindex(times.t)) do i
+        df = n[i]
+        if isnothing(xprev)
+            xprev = df[!, Symbol(s)]
+            return xprev
+        else
+            x = df[!, Symbol(s)] .- xprev
+            xprev = df[!, Symbol(s)]
+            return x
+        end
+
+    end
+    v = hcat(list[begin+1:end]...)
+    if log
+        vmin = get(kw, :vmin, nothing)
+        vmax = get(kw, :vmax, nothing)
+        kw = (;norm=plt.matplotlib.colors.LogNorm(;vmin, vmax))
+    end
+    t1 = @.(0.5 * (times.t[begin:end-1] + times.t[begin+1:end]))
+
+    plt.pcolormesh(t1, z, v; cmap, kw...)
+end
+
+
+function plot_diff_max(folder, s=:e; baseline=nothing, kw...)
+    (times, z, n) = loadsim(folder)
+    xprev = nothing
+
+    if !isnothing(baseline)
+        (btimes, bz, bn) = loadsim(baseline)
+        subtract_baseline!(n, bn)
+    end
+    
+    list = map(eachindex(times.t)) do i
+        df = n[i]
+        if isnothing(xprev)
+            xprev = df[!, Symbol(s)]
+            return xprev
+        else
+            x = df[!, Symbol(s)] .- xprev
+            xprev = df[!, Symbol(s)]
+            return x
+        end
+
+    end
+    v = hcat(list[begin+1:end]...)
+    t1 = @.(0.5 * (times.t[begin:end-1] + times.t[begin+1:end]))
+    imax = dropdims(map(x->x[1], argmax(v, dims=1)), dims=1)
+    plt.plot(t1, z[imax], "o", ms=0.5, c="r")
+end
+
+
+function plot_slice(folder, zslice, s::Symbol=:e; baseline=nothing, kw...)
+    (times, z, n) = loadsim(folder)
+    if !isnothing(baseline)
+        (btimes, bz, bn) = loadsim(baseline)
+        subtract_baseline!(n, bn)
+    end
 
     list = map(eachindex(times.t)) do i
         df = n[i]
@@ -107,6 +199,18 @@ function loadsim(folder, ::Val{:hdf5})
     return (times, z, n)
 end
 
+
+function subtract_baseline!(df, bl)
+    @assert length(df) == length(bl)
+    for i in eachindex(df)
+        for col in names(df[i])
+            col == :z && continue
+            df[i][!, col] .-= bl[i][!, col]
+        end
+    end
+
+    return df
+end
 
 
 end
