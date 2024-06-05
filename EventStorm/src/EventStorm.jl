@@ -93,11 +93,13 @@ function _main(;
                hmin = 70 * co.kilo,
                hmax = 95 * co.kilo,
                
-               # The storm is simulated as gaussian in time and both spatial dimensions;
-               # The duration extension here are standard deviations.
-               storm_duration = 1.5 * co.hour,
+               # The storm is simulated as 2d gaussian in space. This is the standard deviation
                storm_extension = 100 * co.kilo,
-               storm_peak_time = 4 * co.hour,
+
+               # The time distribution is either a gaussian ("gauss") or uniform ("uniform").
+               storm_time_dist = "uniform",
+               storm_duration = 1.5 * co.hour,
+               storm_center_time = 4 * co.hour,
                               
                # Expected number of flashes in the storm (actual number may differ).
                storm_expected_flashes = 1000.0,
@@ -106,7 +108,7 @@ function _main(;
                storm_distance = 100 * co.kilo,
                
                # Final time of the simulation
-               final_time = storm_peak_time + 5 * storm_duration,
+               final_time = storm_center_time + 5 * storm_duration,
 
                # Starting time of the simulation
                start_time = 0.0,
@@ -257,7 +259,16 @@ function _main(;
     Random.seed!(random_seed)
     nevents = convert(Int, rand(Poisson(storm_expected_flashes)))
     @info "Number of flashes to simulate:" nevents
-    event_times = storm_peak_time .+ storm_duration .* randn(nevents)
+
+    if storm_time_dist == "gauss"
+        event_times = storm_center_time .+ storm_duration .* randn(nevents)
+    elseif storm_time_dist == "uniform"
+        event_times = storm_center_time .+ storm_duration .* (rand(nevents) .- 0.5)
+    else
+        @error "Unknown storm_time_dist" storm_time_dist
+    end
+    
+        
     sort!(event_times)
     PROGRESS_REF[] = Progress(nevents; showspeed=true)
     if final_time < last(event_times)
