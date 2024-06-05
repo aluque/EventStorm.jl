@@ -201,7 +201,7 @@ function _main(;
     n_co2 = interp_gas_profile(gas_profiles, :CO2, z)
     n_h2o = interp_gas_profile(gas_profiles, :H2O, z)
 
-    n_o = nrmsis.o.(z)
+    n_o = nrlmsis.o.(z)
     
     ##
     ## REACTION SETS (see chemistry.jl)
