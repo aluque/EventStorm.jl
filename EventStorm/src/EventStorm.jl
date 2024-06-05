@@ -175,8 +175,8 @@ function _main(;
     ## READ DENSITY PROFILES
     ##
     gas_profiles = load_gas_profiles(joinpath(DATA_DIR, "US_Std_1976.dat"))
-    waccm_profiles = load_waccm(joinpath(DATA_DIR, "waccm_fg_l38.dat"))
     cr_profile = load_cr_profile(joinpath(DATA_DIR, "Thomas1974_Production.dat"))    
+    waccm_profiles = load_waccm(joinpath(DATA_DIR, "waccm_fg_l38.dat"))
     nrlmsis = load_nrlmsis(joinpath(DATA_DIR, "nrlmsis2.dat"))
 
     if isnothing(iri_electron_density_fname)
@@ -195,12 +195,13 @@ function _main(;
     end
 
     n_o3 = interp_gas_profile(gas_profiles, :O3, z)
-    n_o = interp_gas_profile(waccm_profiles, :O, z)
-    n_no = interp_gas_profile(waccm_profiles, :NO, z)
+    n_no = interp_gas_profile(gas_profiles, :NO, z)
 
     # Following Brasseur and Salomon, CO2 and H2O seem to be important for negative ion chemistry
     n_co2 = interp_gas_profile(gas_profiles, :CO2, z)
     n_h2o = interp_gas_profile(gas_profiles, :H2O, z)
+
+    n_o = nrmsis.o.(z)
     
     ##
     ## REACTION SETS (see chemistry.jl)

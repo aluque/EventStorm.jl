@@ -139,14 +139,17 @@ function load_nrlmsis(T::Type, fname::String)
     df = CSV.read(fname, delim=' ', ignorerepeated=true, DataFrame)
     
     z::Vector{T} = df[!, "Heit(km)"] .* co.kilo
-    n_o2::Vector{T} = df[!, "O2den(cm-3)"] .* co.centi^-3    
+    n_o2::Vector{T} = df[!, "O2den(cm-3)"] .* co.centi^-3
+    n_o::Vector{T} = df[!, "Oden(cm-3)"] .* co.centi^-3
+    
     n_cum_o2 = cumlogint(z, n_o2)
     n_cum_o2 .= n_cum_o2[end] .- n_cum_o2
     
     o2 = linear_interpolation(z, n_o2)
+    o = linear_interpolation(z, n_o)
     cum_o2 = linear_interpolation(z, n_cum_o2)
     
-    return (;o2, cum_o2)
+    return (;o, o2, cum_o2)
 end
 
 load_nrlmsis(fname::String) = load_nrlmsis(Float64, fname)
