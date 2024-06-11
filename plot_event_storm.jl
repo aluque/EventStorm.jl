@@ -135,7 +135,10 @@ function plot_diff_max(folder, s=:e; baseline=nothing, kw...)
     v = hcat(list[begin+1:end]...)
     t1 = @.(0.5 * (times.t[begin:end-1] + times.t[begin+1:end]))
     imax = dropdims(map(x->x[1], argmax(v, dims=1)), dims=1)
-    plt.plot(t1, z[imax], "o", ms=0.5, c="r")
+    #plt.plot(t1, z[imax], "o", ms=0.5, c="r")
+    vmax = [v[imax[i], i] for i in axes(v, 2)]
+    
+    plt.plot(t1, vmax, "o", ms=0.5, c="r")
 end
 
 
