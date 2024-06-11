@@ -271,13 +271,13 @@ function _main(;
         
     sort!(event_times)
     PROGRESS_REF[] = Progress(nevents; showspeed=true)
-    if final_time < last(event_times)
+    if length(event_times) > 0 && final_time < last(event_times)
         final_time = last(event_times) + 60.0
         @warn "final_time was adapted to include all flashes" final_time
     end
 
     start_time = 0.0
-    if start_time > first(event_times)
+    if length(event_times) > 0 && start_time > first(event_times)
         start_time = first(event_times)
         @warn "start_time was adapted to include all flashes" start_time
     end
