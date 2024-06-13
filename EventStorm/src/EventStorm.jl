@@ -236,23 +236,7 @@ function _main(;
     frs = fast_reactions(T, comp; ngas)
     @info "Number of FAST reactions: $(length(frs.reactions))"
 
-    ##
-    ## CONFIG AND WORKSPACE
-    ##
-    kmin = searchsortedfirst(z, hmin)
-    kmax = searchsortedlast(z, hmax)
-    krange = kmin:kmax
     
-    n1 = zeros(nspecies(frs), length(krange))
-    
-    conf = Config(;z, ngas, krange, r1, r2, source_duration,
-                  Ipeak_median, Ipeak_log_std, Ipeak_cutoff,
-                  tl, storm_distance, storm_extension, n1, rs, frs, save_flash, baseline_run,
-                  extra_time)
-    
-    ws = [Workspace(Float64, length(tl)) for _ in krange]
-    
-
     ##
     ## Sample flash times
     ##
@@ -266,8 +250,7 @@ function _main(;
         event_times = storm_center_time .+ storm_duration .* (rand(nevents) .- 0.5)
     else
         @error "Unknown storm_time_dist" storm_time_dist
-    end
-    
+    end        
         
     sort!(event_times)
     PROGRESS_REF[] = Progress(nevents; showspeed=true)
@@ -282,6 +265,25 @@ function _main(;
         @warn "start_time was adapted to include all flashes" start_time
     end
     
+    ##
+    ## CONFIG 
+    ##
+    kmin = searchsortedfirst(z, hmin)
+    kmax = searchsortedlast(z, hmax)
+    krange = kmin:kmax
+    
+    n1 = zeros(nspecies(frs), length(krange))
+    nf = zeros(nspecies(frs), length(krange), nevents)
+    conf = Config(;z, ngas, krange, r1, r2, source_duration,
+                  Ipeak_median, Ipeak_log_std, Ipeak_cutoff,
+                  tl, storm_distance, storm_extension, n1, rs, frs, save_flash, baseline_run,
+                  extra_time, nf)
+
+    ##
+    ## Allocate workspace
+    ##
+    ws = [Workspace(Float64, length(tl)) for _ in krange]
+
     ##
     ## Set up the flash sub-solver
     ##
@@ -342,6 +344,7 @@ function _main(;
 
     if hdf5_output
         specs = species(rs)
+        fspecs = species(frs)
         fname = joinpath(outfolder, "output.hdf5")
         h5open(fname, "w") do fp
             fp["times"] = sol.t
@@ -353,6 +356,8 @@ function _main(;
             g["times"] = event_times
             g["ipeak"] = IPEAK_SAMPLES
             g["rho"] = RHO_SAMPLES
+            g["species"] = collect(map(string, fspecs))
+            g["nf"] = conf.nf
         end        
     end
     
@@ -406,6 +411,9 @@ end
     "Fast reaction set"
     frs::FRS
     
+    "Space for the final densities after each flash (used only for saving)"
+    nf::Array{T, 3}
+
     "Time in the fast system after the end of the source"
     extra_time = 50e-3
     
@@ -419,6 +427,7 @@ end
     baseline_run::Bool = true
 end
 
+
 """
 Thread-local workspace.
 """
@@ -428,13 +437,12 @@ struct Workspace{T, Prop}
 
     "Space to store attenuations."
     c::Vector{T}
-
+    
     function Workspace(T, n)
         return new{T, DipoleRadiators.Propagator{T}}(
             Vector{DipoleRadiators.Propagator{T}}(undef, n),
-            Vector{Float64}(undef, n))
+            Vector{T}(undef, n))
     end
-
 end
 
 function derivs!(dn, n, p, t)

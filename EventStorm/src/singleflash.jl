@@ -8,7 +8,7 @@ Call-back for the slow-system solver, whenever a flash is encountered.
 function flash!(integrator)
     (;conf, ws, flash_integrator) = integrator.p
     (;z, ngas, frs, rs, Ipeak_median, Ipeak_log_std, Ipeak_cutoff,
-     storm_distance, storm_extension, baseline_run, extra_time) = conf
+     storm_distance, storm_extension, baseline_run, extra_time, nf) = conf
     n = integrator.u
     
     next!(PROGRESS_REF[]; showvalues = [(:t, string(integrator.t))])
@@ -39,6 +39,8 @@ function flash!(integrator)
     end
 
     u_modified!(integrator, true)
+    nf[:, :, length(IPEAK_SAMPLES)] = n1
+    
     return
 end
 

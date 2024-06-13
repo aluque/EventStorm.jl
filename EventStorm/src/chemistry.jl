@@ -128,8 +128,8 @@ function slow_reactions(T, fixed_dens)
                           ["N2+", "O2+", "NO+", "O4+"], "",
                           ion_ion_recombination .. ["Kotovsky2016", "Smith1977"])...,
         
-        # Phony reaction to keep track of second positive emissions
-        "SPS -> SPS" => 1.0
+        # Phony reaction to keep track of second positive emissions (not needed now)
+        # "SPS -> SPS" => 1.0
     ]; fix)
     
     return rs
