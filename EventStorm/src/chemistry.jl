@@ -162,12 +162,12 @@ function fast_reactions(T, comp; ngas, swarmfile=joinpath(DATA_DIR, "swarm/LxCat
         "e + O2 + O2M -> O2- + O2M" => RateLookup(tbl, :C27),
         
         @withref(["Pancheshnyi2013/JPhD"],
-                 "O2- + M -> e + O2 + M" => PancheshnyiFitEN(1.24e-11 * co.centi^3, 179.0, 8.8),
-                 "O- + O2 -> O2- + O" => PancheshnyiFitEN(6.96e-11 * co.centi^3, 198.0, 5.6),
+                 "O2- + M -> e + O2 + M"  => PancheshnyiFitEN(1.24e-11 * co.centi^3, 179.0, 8.8),
+                 "O- + O2 -> O2- + O"     => PancheshnyiFitEN(6.96e-11 * co.centi^3, 198.0, 5.6),
                  "O2 + O- + M -> O3- + M" => PancheshnyiFitEN2(1.1e-30 * co.centi^6, 65.0)),
         
         @withref(["Schuman2023/PhysChem"],
-                 "N2 + O- -> e + N2O" => ModArrhenius(;k0=3.98e-17, T0=5097.0, d=-1.36, T),
+                 "N2 + O- -> e + N2O"     => ModArrhenius(;k0=3.98e-17, T0=5097.0, d=-1.36, T),
                  "N2(v1) + O- -> e + N2O" => ModArrhenius(;k0=9.04e-18, T0=674.0, d=-0.85, T),
                  "N2(v2) + O- -> e + N2O" => ModArrhenius(;k0=2.74e-17, T0=186.0, d=-1.10, T)),
         
