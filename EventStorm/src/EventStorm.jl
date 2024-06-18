@@ -296,7 +296,7 @@ function _main(;
     n0 = zeros(nspecies(rs), length(krange))
     for k in axes(n0, 2)
         k1 = krange[k]
-        n0[:, k] = Chemise.init(rs, Dict(:e => ne[k1], Symbol("Y+") => ne[k1]), 0.0)
+        n0[:, k] = Chemise.init(rs, Dict(:e => ne[k1], Symbol("O2+(H2O)") => ne[k1]), 0.0)
     end
 
     cb = DiffEqCallbacks.PresetTimeCallback(event_times, flash!, save_positions=(false, false))
