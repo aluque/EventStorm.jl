@@ -82,10 +82,10 @@ function slow_reactions(T, fixed_dens)
                  "e + NO+ -> N(4S) + O(3P)" => 0.95 * 3.5e-13 * (300 / T) * (T_e / T)^-.69),
         
         @withref(["Kotovsky2016", "Kotovsky2016[22]"],
-                 "e + O4+ -> " => 4.2e-12 * (T_e / T)^-0.48),
+                 "e + O4+ -> O2 + O2" => 4.2e-12 * (T_e / T)^-0.48),
 
         @withref(["Kotovsky2016", "Kotovsky2016[18]", "Kotovsky2016[19]"],
-                 "e + O2+ -> " => 1.95e-13 * (300 / T)^0.7 * (T_e / T)^-0.7),
+                 "e + O2+ -> O + O" => 1.95e-13 * (300 / T)^0.7 * (T_e / T)^-0.7),
 
         @withref(["Kossyi1994"],
                  "N+ + O2 -> O2+ + N" => 2.8e-16,
@@ -107,10 +107,11 @@ function slow_reactions(T, fixed_dens)
         "O2+ + O2 + M -> O4+ + M" => 2.6e-42 * (300 / T)^3.2 .. ["Kotovsky2016", "Brasseur1986"],
 
         # Hydration of positive ions and recombination with e-
-        "O4+ + H2O -> Y+ + O2" => 1.5e-15 .. ["Kotovsky2016", "Brasseur1986"],
-        "NO+ + M + M -> Y+ + M" => (exp(-45.17 + 0.11 * T - 4.84e-4 * T^2)
-                                      .. ["Kotovsky2016", "Kotovsky2016[17]"]),
-        "Y+ + e -> " => 3e-12 .. "Reid1977",
+        "O4+ + H2O -> O2+(H2O) + O2" => 1.5e-15 .. ["Kotovsky2016", "Brasseur1986"],
+        "NO+ + M + M -> NO+(H2O) + M" => (exp(-100.44 + 0.1088 * T - 4.84e-4 * T^2)
+                                          .. ["Kotovsky2016", "Kotovsky2016[17]"]),
+        "O2+(H2O) + e -> " => 3e-12 .. "Reid1977",
+        "NO+(H2O) + e -> " => 7e-13 .. "Reid1977",
         
         # Positive ion chemistry
         # 3-body processes; slow for upper-atmosphere
