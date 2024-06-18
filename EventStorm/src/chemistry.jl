@@ -107,6 +107,7 @@ function slow_reactions(T, fixed_dens)
         "O2+ + O2 + M -> O4+ + M" => 2.6e-42 * (300 / T)^3.2 .. ["Kotovsky2016", "Brasseur1986"],
 
         # Hydration of positive ions and recombination with e-
+        # Note that here (H2O) actually means (H2O)_n with all orders n combined.
         "O4+ + H2O -> O2+(H2O) + O2" => 1.5e-15 .. ["Kotovsky2016", "Brasseur1986"],
         "NO+ + M + M -> NO+(H2O) + M" => (exp(-100.44 + 0.1088 * T - 4.84e-4 * T^2)
                                           .. ["Kotovsky2016", "Kotovsky2016[17]"]),
