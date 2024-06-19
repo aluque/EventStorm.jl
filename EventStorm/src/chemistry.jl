@@ -112,7 +112,7 @@ function slow_reactions(T, fixed_dens)
         "NO+ + M + M -> NO+(H2O) + M" => (exp(-100.44 + 0.1088 * T - 4.84e-4 * T^2)
                                           .. ["Kotovsky2016", "Kotovsky2016[17]"]),
         "O2+(H2O) + e -> " => 3e-12 .. "Reid1977",
-        "NO+(H2O) + e -> " => 7e-13 .. "Reid1977",
+        "NO+(H2O) + e -> " => 3e-12 .. "Reid1977",
         
         # Positive ion chemistry
         # 3-body processes; slow for upper-atmosphere
