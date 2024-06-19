@@ -59,7 +59,8 @@ function plot_diff_profiles(folder, s=:e, scheme = ColorSchemes.isoluminant_cm_7
 end
 
 
-function pcolor_profiles(folder, s=:e; log=true, cmap="gnuplot2", baseline=nothing, kw...)
+function pcolor_profiles(folder, s=:e; log=true, cmap="gnuplot2", baseline=nothing,
+                         vmin=nothing, vmax=nothing, kw...)
     (times, z, n) = loadsim(folder)
     if !isnothing(baseline)
         (btimes, bz, bn) = loadsim(baseline)
@@ -72,8 +73,11 @@ function pcolor_profiles(folder, s=:e; log=true, cmap="gnuplot2", baseline=nothi
     end
     v = hcat(list...)
     if log
-        kw = (;norm=plt.matplotlib.colors.LogNorm(), kw...)
+        kw = (;norm=plt.matplotlib.colors.LogNorm(;vmin, vmax), kw...)
+    else
+        kw = (;norm=plt.matplotlib.colors.Norm(;vmin, vmax), kw...)
     end
+    
     plt.pcolormesh(times.t, z, v; cmap, kw...)
 end
 
