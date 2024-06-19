@@ -123,8 +123,10 @@ function slow_reactions(T, fixed_dens)
         
         
         # Production rate of electrons from cosmic rays. 
-        "O2 -> e + O2+" =>  F .. "ref",
-        "N2 -> e + N2+" =>  F .. "ref",
+        "N2 -> e + N2+"    =>  0.8 * F .. "ref",
+        "N2 -> e + N+ + M" =>  0.2 * F .. "ref",
+        "O2 -> e + O2+"    =>  0.7 * F .. "ref",
+        "O2 -> e + O+ + M" =>  0.3 * F .. "ref",
         
         cartesian_product(["O-", "O2-", "O3-", "CO3-", "OH-", "HCO3-"],
                           ["N2+", "O2+", "NO+", "O4+"], "",
