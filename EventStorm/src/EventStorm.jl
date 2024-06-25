@@ -27,6 +27,7 @@ using Dates
 using Random
 using ProgressMeter
 using HDF5
+using Latexify
 
 using DocStringExtensions
 
