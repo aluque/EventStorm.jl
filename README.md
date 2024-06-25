@@ -19,5 +19,11 @@ The folder `utils/` contains a script called `run.jl`. Use this script to run a 
 julia run.jl input-file.jl
 ```
 
+Alternatively, from the julia prompt:
+```julia
+julia> using EventStorm
+julia> EventStorm.run_from_input("input-file.jl")
+```
+
 ## Input files
 The folder `input/` contains input the files used in the manuscript.
