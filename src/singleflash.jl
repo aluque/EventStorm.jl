@@ -121,7 +121,7 @@ function self_attenuation_derivs!(du, u, p, t)
     (;rho, Ipeak, conf, ws) = p
     (;z, ngas, frs, rs, n1, krange, tl) = conf
 
-    mun = 8.985943e23
+    mun = 1e24
     
     # Expand ArrayPartition
     (n, M) = u.x
