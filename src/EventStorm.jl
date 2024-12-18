@@ -56,7 +56,7 @@ include("singleflash.jl")
 include("scratch.jl")
 include("inputs.jl")
 
-run_from_input(fname) = wrap_input(_main, fname, pretty_print=true)
+run_from_input(fname) = wrap_input(_main, fname; pretty_print=true)
 
 function _main(;
                # Place-holders filled by wrap_input in inputs.jl
