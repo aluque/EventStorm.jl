@@ -178,10 +178,6 @@ function compute_field!(ef, u, p, t; reduced=false, free=false)
         props = ws[k].props
         r = SA[rho, 0.0, z[k1]]
         
-        # Think about this: we have to assume a planar wave so we have to select the 'best' incidence
-        # angle. Here we use the angle with the first dipole
-        costheta = sum(tli -> cosinc(pos(tli), r), tl) / length(tl)
-
         Eq, Ei, Er = free_electric_field(fieldcomponents, r, t, Ipeak, tl, props)
         if !free
             Er *= exp(-M[k + 1])
