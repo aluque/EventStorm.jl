@@ -154,6 +154,9 @@ function _main(;
                #Perform a baseline run that ignores the fast reactions
                baseline_run = false,
 
+               # Townsend chemistry
+               townsend_chemistry = false,
+               
                # If false, returns the configuration but does not run the simulation
                run = true,               
                )
@@ -236,7 +239,7 @@ function _main(;
     rs = slow_reactions(T, fixed_dens)
     @info "Number of SLOW reactions: $(length(rs.reactions))"
     
-    frs = fast_reactions(T, comp; ngas)
+    frs = townsend_chemistry ? fast_reactions_townsend(comp; ngas) : fast_reactions(T, comp; ngas)
     @info "Number of FAST reactions: $(length(frs.reactions))"
 
     
