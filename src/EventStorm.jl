@@ -185,7 +185,7 @@ function _main(;
     gas_profiles = load_gas_profiles(joinpath(DATA_DIR, "US_Std_1976.dat"))
     cr_profile = load_cr_profile(joinpath(DATA_DIR, "Thomas1974_Production.dat"))    
     waccm_profiles = load_waccm(joinpath(DATA_DIR, "waccm_fg_l38.dat"))
-    nrlmsis = load_nrlmsis(joinpath(DATA_DIR, "nrlmsis2.dat"))
+    nrlmsis = load_nrlmsis(joinpath(DATA_DIR, "nrlmsis-20190303.dat"))
 
     if isnothing(iri_electron_density_fname)
         electron_density = LogInterpolatedElectronDensity(joinpath(DATA_DIR, "earth", "electrons.dat"))
