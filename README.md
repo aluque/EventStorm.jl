@@ -13,7 +13,7 @@ julia> Pkg.add(url="https://github.com/aluque/EventStorm.jl")
 ```
 
 ## Running
-The folder `utils/` contains a script called `run.jl`. Use this script to run a simulation using
+The folder `scripts/` contains a script called `run.jl`. Use this script to run a simulation using
 
 ```bash
 julia run.jl input-file.jl
